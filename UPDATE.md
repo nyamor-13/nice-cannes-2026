@@ -76,6 +76,22 @@ dans l'app. Les seules séances marquées `past:1` sont les semaines 1 à 3, fig
 balises `<script src>`, pas par `fetch`, donc aucun serveur n'est nécessaire.
 Le serveur `serve.py` ne sert qu'à la vérification visuelle pendant le développement.
 
+L'app est aussi en ligne (GitHub Pages, accès mobile) : **https://nyamor-13.github.io/nice-cannes-2026/**
+Dépôt public mais non indexé (`noindex` + `robots.txt`) — ne jamais retirer ces protections,
+les données affichées sont personnelles (poids, FC, allures).
+
+## Publier une mise à jour sur GitHub Pages
+
+Après avoir régénéré `data-strava.js`, pousser le changement pour que le site en ligne se mette à jour :
+```
+cd "/Users/romainsammut/Documents/Claude Code/marathon"
+git add data-strava.js
+git commit -m "Sync données du <date>"
+git push
+```
+Le déploiement GitHub Pages se fait automatiquement après le push (30 s à 1-2 min).
+Ne jamais commiter autre chose que `data-strava.js` sans que ce soit explicitement demandé.
+
 ## Points de vigilance
 
 - **Semaine 5 (14-20 septembre) : Romain est à un mariage du vendredi 18 au dimanche 20.**
