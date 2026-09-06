@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nice → Cannes 2026 · Romain</title>
+<meta name="description" content="Suivi d'entraînement pour le Marathon des Alpes-Maritimes Nice → Cannes, 8 novembre 2026">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#0b1622">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nice-Cannes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+html{-webkit-text-size-adjust:100%}
+button,.chk,.tab,.fbtn,.filters button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:root{
+  --azur:#0077b6;--azur-l:#00b4d8;--soleil:#ffb703;--corail:#fb8500;
+  --rouge:#e63946;--vert:#2a9d8f;--violet:#7209b7;
+  --bg:#0b1622;--bg2:#122031;--bg3:#1a2c40;--bg4:#22374f;
+  --tx:#e8f1f8;--tx2:#8fa8bf;--tx3:#5f7a91;--bd:#22374f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--tx);line-height:1.55;padding-bottom:70px;
+  background-image:radial-gradient(ellipse 900px 480px at 12% -5%,rgba(0,119,182,.26),transparent),
+                   radial-gradient(ellipse 700px 380px at 92% 3%,rgba(255,183,3,.11),transparent);
+  background-attachment:fixed;
+  padding-left:var(--safe-l);padding-right:var(--safe-r)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+h2{font-size:1.32rem;font-weight:800;letter-spacing:-.02em;margin-bottom:5px;display:flex;gap:9px;align-items:center}
+h3{font-size:1rem;font-weight:700}
+.lead{color:var(--tx2);font-size:.92rem;margin-bottom:18px;max-width:80ch}
+section{margin:36px 0}
+.tbwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:13px}
+.tbwrap table{margin:0}
+.scrollhint{display:none;align-items:center;gap:6px;font-size:.73rem;color:var(--tx3);margin-top:7px}
+
+/* CARTES DE COMPARAISON (projection) */
+.cmp{display:flex;flex-direction:column;gap:9px}
+.cmp-l{font-size:.82rem;font-weight:700;color:var(--tx)}
+.cmp-vals{display:flex;align-items:center;gap:10px}
+.cmp-v{display:flex;flex-direction:column;gap:2px}
+.cmp-v b{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.cmp-hi{color:var(--soleil)}
+.cmp-k{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3)}
+.cmp-arrow{color:var(--tx3);font-size:1.1rem}
+.cmp-d{font-size:.79rem;color:var(--tx2);line-height:1.5}
+
+
+/* HEADER */
+header{padding:34px 0 14px;text-align:center}
+.kick{font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;color:var(--azur-l);font-weight:700}
+h1{font-size:clamp(1.7rem,5vw,2.8rem);font-weight:800;letter-spacing:-.03em;margin-top:9px;line-height:1.06;
+  background:linear-gradient(100deg,#fff 8%,var(--soleil) 55%,var(--corail) 92%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:var(--tx2);font-size:.93rem;margin-top:7px}
+.cds{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.cd{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:9px 15px;min-width:74px}
+.cd b{display:block;font-size:1.5rem;font-weight:800;color:var(--soleil);line-height:1;font-variant-numeric:tabular-nums}
+.cd span{font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--tx2)}
+.maj{font-size:.72rem;color:var(--tx3);margin-top:14px}
+.maj b{color:var(--vert)}
+
+/* SYNC */
+.syncbtn{margin-top:13px;background:var(--bg2);border:1px solid var(--azur);color:var(--azur-l);
+  padding:9px 18px;border-radius:99px;font-size:.83rem;font-weight:700;cursor:pointer;
+  font-family:inherit;transition:.15s}
+.syncbtn:hover{background:var(--azur);color:#fff}
+.syncbtn.on{background:var(--azur);color:#fff}
+.syncpanel{display:none;max-width:560px;margin:14px auto 0;text-align:left;
+  background:var(--bg2);border:1px solid var(--bd);border-radius:15px;padding:17px 20px}
+.syncpanel.on{display:block}
+.spt{display:block;font-size:.88rem;color:var(--soleil);margin-bottom:9px}
+.spl{margin:0 0 11px 18px;font-size:.84rem;color:var(--tx2);line-height:1.65}
+.spl b{color:var(--tx)}
+.spn{font-size:.78rem;color:var(--tx3);line-height:1.5;margin-top:9px}
+.spn b{color:var(--tx2)}
+.spmobile{display:none}
+.spmobile b{color:var(--soleil)}
+@media(max-width:680px){.spmobile{display:block;background:rgba(255,183,3,.08);
+  border:1px solid rgba(255,183,3,.22);border-radius:9px;padding:9px 11px;margin:0 0 12px}}
+.spcopy{background:var(--soleil);border:0;color:#3d2a00;padding:9px 17px;border-radius:9px;
+  font-size:.83rem;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px}
+.spcopy:hover{background:#ffc633}
+
+/* TABS */
+.tabs{position:sticky;top:0;z-index:50;background:rgba(11,22,34,.93);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--bd);margin-bottom:22px}
+.tabs-in{max-width:1180px;margin:0 auto;padding:0 18px;display:flex;gap:5px}
+.tab{background:none;border:0;border-bottom:2.5px solid transparent;color:var(--tx2);
+  padding:14px 17px;font-size:.93rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--soleil);border-bottom-color:var(--soleil)}
+.pane{display:none}.pane.on{display:block}
+
+/* BARRE DE NAVIGATION BASSE (mobile) */
+.bottomnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:rgba(11,22,34,.96);backdrop-filter:blur(16px);border-top:1px solid var(--bd);
+  padding:6px max(10px,var(--safe-l)) calc(6px + var(--safe-b))}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:0;color:var(--tx3);padding:8px 4px 6px;font-family:inherit;
+  font-size:.66rem;font-weight:700;cursor:pointer;border-radius:12px;transition:.15s}
+.bnav-btn .bico{font-size:1.25rem;line-height:1}
+.bnav-btn.on{color:var(--soleil)}
+.bnav-btn.on .bico{transform:translateY(-1px)}
+
+/* CARDS / GRID */
+.g{display:grid;gap:13px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(212px,1fr))}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:15px;padding:17px 19px}
+
+/* JAUGES */
+.gauge-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px}
+.gauge{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:18px 20px}
+.gauge .gt{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;gap:8px}
+.gauge .gl{font-size:.8rem;color:var(--tx2);font-weight:600}
+.gauge .gv{font-size:1.45rem;font-weight:800;font-variant-numeric:tabular-nums}
+.bar{height:11px;background:var(--bg);border:1px solid var(--bd);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;width:0;transition:width .7s cubic-bezier(.4,0,.2,1);
+  background:linear-gradient(90deg,var(--azur),var(--azur-l) 50%,var(--soleil))}
+.bar.v>i{background:linear-gradient(90deg,#1f7a6f,var(--vert))}
+.gsub{display:flex;justify-content:space-between;font-size:.75rem;color:var(--tx3);margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* KPI */
+.kpi{background:var(--bg2);border:1px solid var(--bd);border-radius:15px;padding:15px 17px;position:relative;overflow:hidden}
+.kpi .kl{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--tx2);font-weight:700}
+.kpi .kv{font-size:1.72rem;font-weight:800;margin:5px 0 1px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .ku{font-size:.78rem;color:var(--tx3);font-weight:600}
+.trend{display:inline-flex;align-items:center;gap:3px;font-size:.74rem;font-weight:800;
+  padding:2px 7px;border-radius:6px;margin-top:7px}
+.tr-up{background:rgba(42,157,143,.18);color:#4fd1c5}
+.tr-dn{background:rgba(230,57,70,.15);color:#ff8a92}
+.tr-eq{background:rgba(143,168,191,.15);color:var(--tx2)}
+.spark{margin-top:9px;display:block;width:100%;height:34px}
+.kpi .kn{font-size:.74rem;color:var(--tx3);margin-top:8px;line-height:1.45}
+
+/* CALLOUTS */
+.co{border-radius:13px;padding:15px 17px;margin:14px 0;font-size:.885rem;border-left:4px solid;line-height:1.55}
+.co b.t{display:block;margin-bottom:5px;font-size:.93rem}
+.co-w{background:rgba(230,57,70,.08);border-color:var(--rouge)}   .co-w b.t{color:#ff8a92}
+.co-i{background:rgba(0,180,216,.08);border-color:var(--azur-l)}  .co-i b.t{color:var(--azur-l)}
+.co-g{background:rgba(255,183,3,.08);border-color:var(--soleil)}  .co-g b.t{color:var(--soleil)}
+.co-v{background:rgba(42,157,143,.09);border-color:var(--vert)}   .co-v b.t{color:#4fd1c5}
+.co-p{background:rgba(114,9,183,.1);border-color:var(--violet)}   .co-p b.t{color:#c896f5}
+
+/* ZONES */
+.zone{background:var(--bg2);border:1px solid var(--bd);border-top:4px solid var(--zc);border-radius:14px;padding:14px 16px}
+.zbadge{background:var(--zc);color:#0b1622;font-weight:800;font-size:.74rem;padding:2px 8px;border-radius:6px}
+.zrow{display:flex;justify-content:space-between;font-size:.83rem;padding:4px 0;border-bottom:1px dashed var(--bd)}
+.zrow:last-of-type{border:0}.zrow span{color:var(--tx2)}
+.zrow b{font-variant-numeric:tabular-nums}
+.zone p{font-size:.76rem;color:var(--tx2);margin-top:7px;line-height:1.45}
+
+/* SEMAINES */
+.wk{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.wk.done{border-color:rgba(42,157,143,.45)}
+.wk.past{border-color:rgba(143,168,191,.25);background:linear-gradient(180deg,rgba(143,168,191,.04),var(--bg2) 100px)}
+.wk.race{border-color:rgba(255,183,3,.42)}
+.wk.now{border-color:var(--azur-l);box-shadow:0 0 0 1px rgba(0,180,216,.25)}
+.wh{display:flex;align-items:center;gap:13px;padding:15px 18px;cursor:pointer;user-select:none;flex-wrap:wrap}
+.wh:hover{background:rgba(255,255,255,.02)}
+.wn{width:41px;height:41px;flex:0 0 41px;border-radius:11px;background:var(--bg3);border:1px solid var(--bd);
+  display:grid;place-items:center;font-weight:800;color:var(--azur-l)}
+.wk.done .wn{background:var(--vert);border-color:var(--vert);color:#062e2b}
+.wk.race .wn{background:var(--soleil);border-color:var(--soleil);color:#3d2a00}
+.wk.past .wn{background:rgba(42,157,143,.2);border-color:rgba(42,157,143,.45);color:#4fd1c5}
+.wm{flex:1;min-width:170px}
+.wm h3{font-size:.99rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wd{font-size:.76rem;color:var(--tx2);margin-top:1px}
+.tag{font-size:.63rem;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:5px;font-weight:800}
+.tg-build{background:rgba(0,119,182,.25);color:#7cc5ec}
+.tg-peak{background:rgba(230,57,70,.2);color:#ff8a92}
+.tg-race{background:rgba(255,183,3,.22);color:var(--soleil)}
+.tg-taper{background:rgba(42,157,143,.2);color:#4fd1c5}
+.tg-past{background:rgba(143,168,191,.16);color:var(--tx2)}
+.tg-now{background:var(--azur-l);color:#04212b}
+.ws{display:flex;gap:13px;align-items:center;font-size:.78rem;color:var(--tx2);font-variant-numeric:tabular-nums}
+.mini{width:52px;height:5px;background:var(--bg);border:1px solid var(--bd);border-radius:99px;overflow:hidden}
+.mini>i{display:block;height:100%;background:var(--vert);width:0}
+.chev{transition:.25s;color:var(--tx2)}.wk.open .chev{transform:rotate(90deg)}
+.wb{display:none;padding:0 18px 16px;border-top:1px solid var(--bd)}
+.wk.open .wb{display:block}
+.wf{font-size:.85rem;color:var(--tx2);padding:13px 0;border-bottom:1px dashed var(--bd)}
+.wf b{color:var(--soleil)}
+.plan-prev{font-size:.77rem;color:var(--tx3);background:var(--bg);border:1px dashed var(--bd);
+  border-radius:9px;padding:9px 12px;margin:10px 0}
+.plan-prev b{color:var(--azur-l);display:block;font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+.bilan{font-size:.83rem;background:rgba(42,157,143,.08);border-left:3px solid var(--vert);
+  border-radius:9px;padding:11px 13px;margin-top:11px;color:var(--tx2)}
+.bilan b{color:#4fd1c5}
+
+/* SÉANCES */
+.se{border-bottom:1px dashed var(--bd);padding:12px 0}
+.se:last-child{border:0}
+.sh{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.chk{flex:0 0 21px;width:21px;height:21px;margin-top:2px;border-radius:6px;border:2px solid var(--bd);
+  background:var(--bg);display:grid;place-items:center;font-size:.72rem;color:transparent;transition:.15s}
+.chk:hover{border-color:var(--azur-l)}
+.chk.on{background:var(--vert);border-color:var(--vert);color:#062e2b}
+.chk.lock{background:rgba(42,157,143,.25);border-color:rgba(42,157,143,.5);color:#4fd1c5;cursor:default}
+.sb{flex:1;min-width:0}
+.st{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
+.sd{font-size:.65rem;text-transform:uppercase;letter-spacing:.09em;color:var(--tx2);font-weight:700;
+  background:var(--bg3);padding:2px 6px;border-radius:4px}
+.si{font-size:.93rem}
+.sn{font-weight:700;font-size:.9rem}
+.se.ok .sn{opacity:.5;text-decoration:line-through}
+.se.pastse .sn{opacity:1;text-decoration:none}
+.sx{font-size:.83rem;color:var(--tx2);line-height:1.45}
+.pill{display:inline-block;font-size:.69rem;font-weight:800;padding:1px 6px;border-radius:5px;background:var(--pb);color:var(--pc)}
+.mets{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.met{font-size:.71rem;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--bg3);
+  border:1px solid var(--bd);color:var(--tx2);font-variant-numeric:tabular-nums}
+.met.hi{background:rgba(255,183,3,.13);border-color:rgba(255,183,3,.32);color:var(--soleil)}
+.met.hr{background:rgba(230,57,70,.11);border-color:rgba(230,57,70,.28);color:#ff9aa2}
+.snote{font-size:.78rem;color:var(--soleil);margin-top:5px;padding-left:9px;border-left:2px solid rgba(255,183,3,.38)}
+.sx.fixe{color:var(--soleil);font-weight:700}
+.expand{font-size:.72rem;color:var(--azur-l);margin-top:6px;font-weight:700;cursor:pointer;display:inline-block}
+.expand:hover{text-decoration:underline}
+
+/* BLOCS course/renfo/natation */
+.blockgrp{margin-bottom:6px}
+.bgh{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--tx2);padding:12px 0 6px;border-top:1px solid var(--bd);margin-top:6px}
+.blockgrp:first-child .bgh{border-top:0;margin-top:0;padding-top:2px}
+.bgc{background:var(--bg3);color:var(--tx3);font-size:.68rem;font-weight:700;padding:1px 7px;
+  border-radius:99px;margin-left:auto}
+
+/* DÉPENDANCES avant/après */
+.deps{display:grid;gap:9px;background:rgba(255,183,3,.05);border:1px solid rgba(255,183,3,.18);
+  border-radius:10px;padding:11px 13px}
+.dep .depl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800;
+  color:var(--soleil);display:block;margin-bottom:2px}
+.dep .bt{font-size:.81rem}
+
+/* PLANNING PROPOSÉ */
+.planning{margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)}
+.plh{font-size:.85rem;font-weight:700;margin-bottom:9px;color:var(--tx)}
+.ptb td:first-child{color:var(--tx3);font-weight:700;width:90px}
+.ptb .prest{color:var(--tx3);font-style:italic;font-weight:400}
+.ptb .plus{color:var(--tx3);font-weight:400}
+.ptb tr.prow-rest td{color:var(--tx3)}
+.pnote{font-size:.75rem;color:var(--tx3);margin-top:8px;line-height:1.5}
+
+/* DÉTAIL SÉANCE */
+.sdet{display:none;margin-top:11px;background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:14px 16px}
+.se.open .sdet{display:block}
+.sdet .blk{margin-bottom:12px}
+.sdet .blk:last-child{margin-bottom:0}
+.sdet .bl{font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--azur-l);margin-bottom:3px}
+.sdet .bt{font-size:.83rem;color:var(--tx2);line-height:1.55}
+.sdet .bt b{color:var(--tx)}
+.formes{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.fbtn{background:var(--bg2);border:1px solid var(--bd);color:var(--tx2);padding:6px 11px;border-radius:9px;
+  font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.fbtn:hover{border-color:var(--azur-l);color:var(--tx)}
+.fbtn.on{background:var(--azur);border-color:var(--azur-l);color:#fff}
+.fbtn[data-f="hs"].on{background:var(--rouge);border-color:#ff8a92}
+.fbtn[data-f="bof"].on{background:var(--corail);border-color:var(--soleil);color:#2b1a00}
+.fbtn[data-f="top"].on{background:var(--vert);border-color:#4fd1c5;color:#052a26}
+.fadapt{margin-top:9px;font-size:.83rem;padding:10px 13px;border-radius:9px;
+  background:rgba(0,180,216,.09);border-left:3px solid var(--azur-l);color:var(--tx)}
+.fadapt b{color:var(--azur-l)}
+.ressenti{margin-top:11px;padding-top:11px;border-top:1px dashed var(--bd)}
+.ressenti textarea{width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:9px;
+  color:var(--tx);padding:9px 11px;font-family:inherit;font-size:.82rem;resize:vertical;min-height:52px;margin-top:6px}
+.ressenti textarea:focus{outline:0;border-color:var(--azur-l)}
+.saved{font-size:.71rem;color:var(--vert);font-weight:700;margin-left:7px;opacity:0;transition:.3s}
+.saved.show{opacity:1}
+
+/* TABLEAUX */
+.tb{width:100%;border-collapse:collapse;font-size:.84rem;background:var(--bg2);
+  border:1px solid var(--bd);border-radius:13px;overflow:hidden}
+.tb th{background:var(--bg3);padding:9px 12px;text-align:left;font-size:.69rem;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--tx2)}
+.tb td{padding:9px 12px;border-top:1px solid var(--bd);vertical-align:top}
+.tb td:first-child{font-weight:700;color:var(--azur-l);white-space:nowrap}
+.tb td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tb td.w{font-weight:800;color:var(--soleil);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.filters button{background:var(--bg2);border:1px solid var(--bd);color:var(--tx2);padding:6px 13px;
+  border-radius:99px;font-size:.79rem;cursor:pointer;font-weight:700;font-family:inherit}
+.filters button.on{background:var(--azur);border-color:var(--azur-l);color:#fff}
+
+footer{text-align:center;color:var(--tx3);font-size:.76rem;margin-top:46px;padding-top:20px;border-top:1px solid var(--bd)}
+.rst{background:none;border:1px solid var(--bd);color:var(--tx3);padding:5px 13px;border-radius:99px;
+  cursor:pointer;font-size:.73rem;margin-top:10px;font-family:inherit}
+.rst:hover{border-color:var(--rouge);color:#ff8a92}
+@media(max-width:600px){.ws{width:100%;justify-content:space-between;padding-left:54px}}
+
+/* ---------- MOBILE (fin de feuille : priorité sur toutes les règles ci-dessus) ---------- */
+@media(max-width:680px){
+  body{padding-bottom:calc(78px + var(--safe-b))}
+  .wrap{padding:0 14px}
+  header{padding:calc(20px + var(--safe-t)) 0 10px}
+  .kick{font-size:.6rem;letter-spacing:.18em}
+  h1{font-size:1.9rem;line-height:1.05}
+  .sub{font-size:.86rem}
+  section{margin:26px 0}
+  h2{font-size:1.12rem}
+  .lead{font-size:.87rem;margin-bottom:14px}
+  .card,.gauge,.kpi{padding:14px 15px}
+  .co{padding:13px 14px;font-size:.85rem}
+  .g3{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .tabs{display:none}
+  .bottomnav{display:flex}
+  .scrollhint{display:flex}
+
+  .cds{gap:5px;flex-wrap:nowrap}
+  .cd{min-width:0;flex:1 1 0;padding:7px 2px;border-radius:10px}
+  .cd b{font-size:1.15rem}
+  .cd span{font-size:.48rem;letter-spacing:.03em}
+
+  .syncbtn{width:100%;min-height:46px;font-size:.86rem}
+  .syncpanel{width:100%;max-width:none}
+  .spcopy{width:100%;min-height:46px}
+
+  .wh{padding:14px 15px}
+  .chk{width:26px;height:26px;flex:0 0 26px}
+  .fbtn{padding:9px 13px;min-height:40px}
+  .filters button{padding:9px 15px;min-height:40px}
+  .ressenti textarea{font-size:16px}
+
+  .kpi .kv{font-size:1.5rem}
+}
+@media(min-width:681px){ .bottomnav{display:none !important} }
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="kick">Marathon des Alpes-Maritimes · 8 novembre 2026</div>
+  <h1>Nice&nbsp;→&nbsp;Cannes</h1>
+  <p class="sub" id="subtitle"></p>
+  <div class="cds" id="cds"></div>
+  <div class="maj" id="majline"></div>
+  <button class="syncbtn" id="syncbtn">🔄 Synchroniser maintenant</button>
+  <div class="syncpanel" id="syncpanel">
+    <b class="spt" id="sptitle">Avant de lancer la synchro, vérifie que tout est ouvert</b>
+    <p class="spn spmobile" id="spmobile">📱 Depuis ton téléphone, ce bouton sert juste à copier la commande —
+       il faut ensuite la coller <b>dans Claude Code sur ton ordinateur</b> pour qu'elle s'exécute.</p>
+    <ol class="spl">
+      <li><b>Chrome</b> est ouvert (pas seulement en arrière-plan)</li>
+      <li>Un onglet est sur <b>connect.garmin.com</b>, <b>connecté à ton compte</b></li>
+      <li>L'<b>extension Claude</b> est active dans Chrome</li>
+      <li><b>Claude Code</b> est ouvert sur le dossier « Claude Code »</li>
+    </ol>
+    <p class="spn">Sans Chrome, la synchro fonctionne quand même — mais avec Strava seul,
+       sans les métriques Garmin (VO2max, prédictions, FC de repos).</p>
+    <button class="spcopy" id="spcopy">📋 Copier la commande</button>
+    <p class="spn" id="spdone">Colle-la dans Claude Code et envoie. Tu peux aussi lancer la tâche
+       depuis la barre latérale : <b>Scheduled → marathon-nice-cannes-maj → Run now</b>.</p>
+  </div>
+</div></header>
+
+<nav class="tabs"><div class="tabs-in">
+  <button class="tab on" data-p="suivi">📊 Suivi &amp; analyse</button>
+  <button class="tab" data-p="plan">🗓️ Plan d'entraînement</button>
+</div></nav>
+
+<nav class="bottomnav">
+  <button class="tab bnav-btn on" data-p="suivi"><span class="bico">📊</span>Suivi</button>
+  <button class="tab bnav-btn" data-p="plan"><span class="bico">🗓️</span>Plan</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══════════ ONGLET SUIVI ═══════════ -->
+<div class="pane on" id="p-suivi">
+
+  <section>
+    <h2>🎯 Où j'en suis</h2>
+    <p class="lead">Réalisation du bloc de 12 semaines. Les séances antérieures au 6 septembre sont importées de Strava, les suivantes se cochent dans l'onglet Plan.</p>
+    <div class="gauge-wrap" id="gauges"></div>
+  </section>
+
+  <section>
+    <h2>📈 Indicateurs &amp; tendances</h2>
+    <p class="lead">Calculés semaine par semaine sur tes activités réelles. La tendance compare les 3 dernières semaines aux 3 précédentes.</p>
+    <div class="g g3" id="kpis"></div>
+  </section>
+
+  <section>
+    <h2>🔮 Projection au 8 novembre</h2>
+    <p class="lead">Estimation si tu réalises le plan tel qu'il est écrit. La méthode est expliquée sous le tableau — ce sont des projections, pas des promesses.</p>
+    <div id="projection"></div>
+  </section>
+
+  <section>
+    <h2>🔬 Ce qui se passe dans tes muscles</h2>
+    <div id="analyse"></div>
+  </section>
+
+  <section>
+    <h2>🛠️ Points d'amélioration</h2>
+    <div id="ameliorations"></div>
+  </section>
+
+  <section>
+    <h2>📅 Historique hebdomadaire</h2>
+    <p class="lead">Chaque ligne est une semaine calendaire. L'efficience est le nombre de mètres parcourus par battement de cœur — le meilleur indicateur de progrès disponible sans test en laboratoire.</p>
+    <div class="tbwrap"><table class="tb" id="histo"></table></div>
+    <p class="scrollhint">👉 Fais glisser le tableau vers la gauche pour voir toutes les colonnes</p>
+  </section>
+</div>
+
+<!-- ═══════════ ONGLET PLAN ═══════════ -->
+<div class="pane" id="p-plan">
+
+  <section>
+    <h2>🎯 Tes 5 zones</h2>
+    <p class="lead" id="zlead"></p>
+    <div class="g g3" id="zones"></div>
+  </section>
+
+  <section>
+    <h2>🗓️ Les 12 semaines</h2>
+    <p class="lead">Clique une séance pour déplier son objectif, ce qu'elle produit musculairement, et l'adapter à ta forme du jour. Tes saisies sont enregistrées dans ce navigateur.</p>
+    <div class="filters">
+      <button class="on" data-f="all">Tout</button>
+      <button data-f="run">🏃 Course</button>
+      <button data-f="strength">🏋️ Renfo</button>
+      <button data-f="swim">🏊 Natation</button>
+      <button data-f="todo">⬜ À faire</button>
+    </div>
+    <div id="weeks"></div>
+  </section>
+</div>
+
+<footer>
+  Plan « Objectif moins de 4h » (12 semaines) recalibré sur tes données Strava et Garmin Connect.<br>
+  Semaines 1 à 3 reconstituées depuis tes activités réelles · mise à jour automatique quotidienne.
+  <br><button class="rst" id="rst">↺ Réinitialiser mes saisies</button>
+</footer>
+</div>
+
+<script src="data-plan.js"></script>
+<script src="data-strava.js"></script>
+<script>
+/* ═════════ ÉTAT ═════════ */
+const KEY="mnc2026-v3";
+let ST=JSON.parse(localStorage.getItem(KEY)||"{}");
+const save=()=>localStorage.setItem(KEY,JSON.stringify(ST));
+const sid=(w,i)=>`w${w}s${i}`;
+const g=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* une séance est faite si cochée ou importée de Strava */
+const isDone=(w,s,i)=>s.past?true:!!(ST[sid(w.n,i)]||{}).done;
+const getS=(w,i)=>ST[sid(w.n,i)]||{};
+const setS=(w,i,o)=>{ST[sid(w.n,i)]={...getS(w,i),...o};save()};
+
+const pill=t=>String(t).replace(/\b(Z[1-5])\b/g,(m,z)=>
+  ZONES[z]?`<span class="pill" style="--pb:${ZONES[z].c}33;--pc:${ZONES[z].c}">${z}</span>`:m);
+const ICO={run:"🏃",strength:"🏋️",swim:"🏊"};
+const FORMES=[["top","💪 En forme"],["normal","🙂 Normal"],["bof","😐 Fatigué"],["hs","🥵 Cuit"]];
+
+/* ═════════ HEADER ═════════ */
+g("subtitle").innerHTML=`12 semaines · objectif <b style="color:var(--soleil)">${META.objectif.plan}</b> `+
+  `(${META.objectif.allure}/km) · priorité : ${META.priorite.toLowerCase()}`;
+const RACE=new Date(META.date);
+function tick(){
+  const ms=RACE-new Date();
+  if(ms<0){g("cds").innerHTML='<div class="cd"><b>🏁</b><span>Bonne course</span></div>';return}
+  const d=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;
+  g("cds").innerHTML=[[Math.ceil(d/7),"semaines"],[d,"jours"],[h,"h"],[m,"min"],[s,"s"]]
+    .map(([v,l])=>`<div class="cd"><b>${v}</b><span>${l}</span></div>`).join("");
+}
+tick();setInterval(tick,1000);
+(()=>{const d=new Date(MAJ.date);
+ g("majline").innerHTML=`Dernière synchronisation <b>${d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</b> · Strava${MAJ.garmin?" + Garmin":""}`;})();
+
+/* ═════════ SEMAINE COURANTE ═════════ */
+const NOW=new Date();
+const curWeek=(()=>{
+  let c=SEMAINES[0];
+  for(const w of SEMAINES){const d=new Date(w.du+"T00:00:00");if(d<=NOW)c=w;}
+  return c.n;})();
+
+/* ═════════ CALCULS ═════════ */
+function stats(){
+  let tot=0,fait=0,km_prevu=0,km_fait=0,parType={run:[0,0],strength:[0,0],swim:[0,0]};
+  let restKm=0,restSe=0;
+  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{
+    const done=isDone(w,s,i),k=s.k||"run";
+    tot++;parType[k][1]++;
+    if(s.km){km_prevu+=s.km}
+    if(done){fait++;parType[k][0]++;if(s.km)km_fait+=s.km}
+    else{restSe++;if(s.km)restKm+=s.km}
+  }));
+  return{tot,fait,km_prevu,km_fait,parType,restKm,restSe};
+}
+const S=stats();
+
+/* ═════════ JAUGES ═════════ */
+(function(){
+  const pc=Math.round(S.fait/S.tot*100), pk=Math.round(S.km_fait/S.km_prevu*100);
+  const semRest=12-curWeek;
+  g("gauges").innerHTML=`
+  <div class="gauge"><div class="gt"><span class="gl">Séances réalisées</span>
+    <span class="gv" style="color:var(--vert)">${pc}%</span></div>
+    <div class="bar v"><i style="width:${pc}%"></i></div>
+    <div class="gsub"><span><b style="color:var(--tx)">${S.fait}</b> faites</span><span>${S.restSe} restantes · ${S.tot} au total</span></div></div>
+
+  <div class="gauge"><div class="gt"><span class="gl">Kilomètres parcourus</span>
+    <span class="gv" style="color:var(--soleil)">${Math.round(S.km_fait)} km</span></div>
+    <div class="bar"><i style="width:${pk}%"></i></div>
+    <div class="gsub"><span><b style="color:var(--tx)">${pk}%</b> du plan</span><span>${Math.round(S.restKm)} km restants · ${Math.round(S.km_prevu)} au total</span></div></div>
+
+  <div class="gauge"><div class="gt"><span class="gl">Avancement du calendrier</span>
+    <span class="gv" style="color:var(--azur-l)">S${curWeek}<span style="font-size:.9rem;color:var(--tx3)">/12</span></span></div>
+    <div class="bar"><i style="width:${Math.round(curWeek/12*100)}%"></i></div>
+    <div class="gsub"><span>${semRest} semaine${semRest>1?"s":""} après celle-ci</span><span>${SEMAINES[curWeek-1].tag}</span></div></div>
+
+  <div class="gauge"><div class="gt"><span class="gl">Par discipline</span></div>
+    ${[["run","🏃 Course"],["strength","🏋️ Renfo"],["swim","🏊 Natation"]].map(([k,l])=>{
+      const[a,b]=S.parType[k],p=Math.round(a/b*100);
+      return `<div style="margin-bottom:9px"><div class="gsub" style="margin:0 0 4px">
+        <span>${l}</span><span><b style="color:var(--tx)">${a}</b>/${b}</span></div>
+        <div class="bar v" style="height:7px"><i style="width:${p}%"></i></div></div>`}).join("")}
+  </div>`;
+})();
+
+/* ═════════ KPI + SPARKLINES ═════════ */
+function spark(vals,color){
+  const v=vals.filter(x=>x!=null);if(v.length<2)return"";
+  const mn=Math.min(...v),mx=Math.max(...v),rg=mx-mn||1,W=100,H=30;
+  const pts=vals.map((x,i)=>x==null?null:[i/(vals.length-1)*W,H-((x-mn)/rg)*(H-5)-2.5]).filter(Boolean);
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const last=pts[pts.length-1];
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
+function trend(vals,inverse){
+  const v=vals.filter(x=>x!=null);if(v.length<4)return null;
+  const n=Math.min(3,Math.floor(v.length/2));
+  const rec=v.slice(-n).reduce((a,b)=>a+b,0)/n, old=v.slice(-2*n,-n).reduce((a,b)=>a+b,0)/n;
+  const d=(rec-old)/old*100;
+  return{pct:d,good:inverse?d<0:d>0};
+}
+(function(){
+  const H=HEBDO, last8=H.slice(-8);
+  const kpis=[
+    {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",s:last8.map(x=>x.km),c:"#00b4d8",
+     t:trend(H.map(x=>x.km)),n:"Le plan te fait monter jusqu'à ~65 km en semaine 10."},
+    {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",s:last8.map(x=>x.longest),c:"#ffb703",
+     t:trend(H.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. C'est ton principal levier."},
+    {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",s:H.map(x=>x.eff),c:"#2a9d8f",
+     t:trend(H.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
+    {l:"Allure moyenne",v:H[H.length-1].allure,u:"/km toutes sorties",s:last8.map(x=>-x.allure_min),c:"#7209b7",
+     t:trend(H.map(x=>x.allure_min),true),
+     n:"⚠️ Doit RALENTIR : tes footings sont trop rapides. Une baisse ici est un bon signe."},
+    {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",s:H.map(x=>x.fc),c:"#e63946",
+     t:trend(H.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
+    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",s:last8.map(x=>x.dplus),c:"#fb8500",
+     t:trend(H.map(x=>x.dplus)),n:"Les séances de côtes vont le faire remonter dès la semaine 5."}
+  ];
+  g("kpis").innerHTML=kpis.map(k=>{
+    const t=k.t;
+    const badge=t?`<span class="trend ${t.good?'tr-up':(Math.abs(t.pct)<3?'tr-eq':'tr-dn')}">${t.pct>0?'▲':'▼'} ${Math.abs(t.pct).toFixed(0)} %</span>`:'';
+    return `<div class="kpi"><div class="kl">${k.l}</div>
+      <div class="kv" style="color:${k.c}">${k.v??'—'}</div>
+      <div class="ku">${k.u}</div>${badge}
+      ${spark(k.s,k.c)}<div class="kn">${k.n}</div></div>`}).join("");
+})();
+
+/* ═════════ PROJECTION ═════════ */
+(function(){
+  const pc=S.fait/S.tot;
+  // modèle : l'écart entre potentiel pur (3h26) et prédiction actuelle (3h54)
+  // mesure le déficit d'endurance. Le plan en comble une partie.
+  const predNow=3*60+54.7, cible=3*60+45, potentiel=3*60+26;
+  const proj=predNow-(predNow-cible)*pc;
+  const fmt=m=>`${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,"0")}`;
+  const volPrevu=Math.round(S.km_prevu), slMax=27;
+  g("projection").innerHTML=`
+  <div class="g g3" style="margin-bottom:15px">
+    <div class="kpi"><div class="kl">Prédiction Garmin actuelle</div>
+      <div class="kv" style="color:var(--tx2)">${GARMIN.predictions.marathon.slice(0,4).replace(':','h')}</div>
+      <div class="ku">au 5 septembre</div>
+      <div class="kn">Ce que tes données valent aujourd'hui, avant le bloc.</div></div>
+    <div class="kpi"><div class="kl">Projection si plan réalisé</div>
+      <div class="kv" style="color:var(--soleil)">${fmt(proj)}</div>
+      <div class="ku">à ${Math.round(pc*100)} % de réalisation</div>
+      <div class="kn">Converge vers 3h45 à mesure que tu coches les séances.</div></div>
+    <div class="kpi"><div class="kl">Potentiel du moteur</div>
+      <div class="kv" style="color:var(--vert)">${fmt(potentiel)}</div>
+      <div class="ku">selon ton 5 km prédit</div>
+      <div class="kn">Ce que vaudrait ton VO2max avec une endurance parfaite.</div></div>
+  </div>
+  <div class="g g2">
+    ${[
+      ["Sortie longue max","16,4 km","30 km","Le facteur n°1. Passer de 16 à 30 km transforme ta capacité à tenir le km 35."],
+      ["Volume total du bloc",`${Math.round(S.km_fait)} km`,`${volPrevu} km`,"Densification capillaire et mitochondriale, meilleure utilisation des graisses."],
+      ["Temps à allure marathon","~20 min","~3 h cumulées","L'allure 5:20/km devient un automatisme au lieu d'un effort."],
+      ["Séances au seuil","0","4 séances","Relève le plafond aérobie sous lequel se situe ton allure de course."]
+    ].map(([l,av,ap,d])=>`
+    <div class="card cmp">
+      <div class="cmp-l">${l}</div>
+      <div class="cmp-vals">
+        <div class="cmp-v"><span class="cmp-k">Aujourd'hui</span><b>${av}</b></div>
+        <div class="cmp-arrow">→</div>
+        <div class="cmp-v"><span class="cmp-k">Fin du plan</span><b class="cmp-hi">${ap}</b></div>
+      </div>
+      <p class="cmp-d">${d}</p>
+    </div>`).join("")}
+  </div>
+  <div class="co co-i"><b class="t">Comment lire cette projection</b>
+    Elle interpole entre la prédiction Garmin actuelle (3h54) et l'objectif (3h45), au prorata des séances validées.
+    C'est un <b>modèle simple et volontairement transparent</b>, pas un algorithme physiologique : il traduit l'idée que
+    ton chrono dépend surtout de ta capacité à faire les sorties longues. Le vrai point de contrôle reste
+    <b>ton semi en solo du 11 octobre</b> (le 20 km de Paris affiche complet) — un chrono réel vaut mieux que n'importe quelle projection.
+  </div>`;
+})();
+
+/* ═════════ ANALYSE MUSCULAIRE ═════════ */
+g("analyse").innerHTML=`
+<div class="co co-g"><b class="t">Ton profil : un gros moteur sur des jambes sous-entraînées</b>
+  Ton VO2max de <b>52 ml/kg/min</b> te place dans le top 10 % des hommes de ton âge, et ton cœur tourne à
+  <b>49 bpm au repos</b>. Côté cardio-respiratoire, tu as le moteur d'un coureur à 3h26.
+  <br><br>Mais un marathon ne se joue pas seulement là. Il se joue dans ta capacité à encaisser
+  <b>~35 000 impacts</b> à 2,5-3 fois ton poids de corps, et à alimenter tes muscles pendant 3h45.
+  Ta plus longue sortie de l'été fait 16,4 km : tes fibres n'ont jamais été confrontées à ce que tu leur demanderas.</div>
+
+<div class="g g2">
+  <div class="card"><h3>🔋 Ce qui limite : le carburant</h3>
+    <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène. Un marathon en coûte
+    ~2 800. Le mur du km 32, c'est ce moment où le réservoir se vide et où le corps doit basculer sur les graisses —
+    une filière deux fois plus lente.
+    <br><br><b>Ce que le plan y fait :</b> les sorties longues au-delà de 1h45 entraînent précisément cette bascule.
+    Plus tu la répètes, plus tôt et plus efficacement ton corps utilise les lipides, et plus tu épargnes ton glycogène.</p></div>
+
+  <div class="card"><h3>🦵 Ce qui casse : les fibres</h3>
+    <p class="lead" style="margin:8px 0 0">À chaque foulée, tes quadriceps freinent la descente en contraction
+    <b>excentrique</b> — le mode qui crée le plus de micro-lésions. Après 30 km, l'accumulation dégrade ta foulée,
+    ton bassin s'affaisse, ton allure chute même si le cœur suit.
+    <br><br><b>Ce que le plan y fait :</b> les côtes, le renfo excentrique (descentes freinées) et surtout
+    l'unilatéral construisent des fibres qui résistent au lieu de céder.</p></div>
+
+  <div class="card"><h3>❤️ Ce qui va bien : le cardio</h3>
+    <p class="lead" style="margin:8px 0 0">14,2 km à 5:26/km à <b>137 bpm</b>, soit 74 % de ta FCmax : c'est un
+    rapport allure/FC remarquable. Ton efficience progresse de <b>1,214 à 1,331 m par battement</b> en trois semaines.
+    <br><br><b>Conséquence :</b> on ne cherche pas à développer ton cardio, il est déjà là. Tout le plan sert à faire
+    remonter tes jambes au niveau de ton cœur.</p></div>
+
+  <div class="card"><h3>🧠 Ce qui s'apprend : l'allure</h3>
+    <p class="lead" style="margin:8px 0 0">Tenir 5:20/km pendant 42 km demande un automatisme, pas un calcul.
+    Les blocs « dont X′ Z3 » placés en fin de sortie longue servent exactement à ça : ancrer l'allure dans des
+    jambes déjà fatiguées.
+    <br><br><b>Total sur le bloc :</b> environ 3 heures cumulées à allure marathon, dont la majorité après
+    1 h de course. C'est ce qui fait la différence entre subir et gérer.</p></div>
+</div>`;
+
+/* ═════════ AMÉLIORATIONS ═════════ */
+g("ameliorations").innerHTML=`
+<div class="co co-w"><b class="t">1. Tes footings sont trop rapides — priorité absolue</b>
+  Tes sorties « faciles » tournent à 5:26-5:28/km, soit ton allure marathon cible. Tu passes ton temps dans la
+  zone grise : trop rapide pour récupérer, trop lent pour progresser.
+  <br><b>Action :</b> tes Z1 à <b>6:00-6:30/km</b>. Tu l'as déjà fait en Indonésie sans effort — la chaleur t'y obligeait.
+  Ça te semblera absurdement lent pendant dix jours, puis tes séances de qualité deviendront meilleures.</div>
+
+<div class="co co-w"><b class="t">2. Ton volume de sortie longue est très insuffisant</b>
+  16,4 km maximum sur l'été, pour un objectif à 42,2 km. C'est l'écart le plus dangereux du dossier.
+  <br><b>Action :</b> la progression est déjà écrite (18 → 21 → 24 → 27 → 30 km, semi-marathon test en solo au passage). Ne saute jamais une sortie longue,
+  quitte à sacrifier une séance de qualité dans la semaine.</div>
+
+<div class="co co-i"><b class="t">3. Tu n'as jamais travaillé au seuil</b>
+  Aucune séance de type 5 × 6′ en Z4 dans ton historique. C'est le levier le plus rentable pour élever ton plafond.
+  <br><b>Action :</b> quatre séances de seuil sont programmées (semaines 7, 10 et 11). Elles seront dures et nouvelles —
+  vise l'ennui sur le premier bloc, pas la performance.</div>
+
+<div class="co co-i"><b class="t">4. Ton renfo est efficace mais incomplet</b>
+  Bonne base (leg press 190 kg, abduction 95 kg), mais 100 % sur machines guidées et en séries de 30-50 répétitions.
+  Aucun travail unilatéral, aucun excentrique lourd.
+  <br><b>Action :</b> séance B ajoutée — leg press une jambe, fentes bulgares, mollets unipodaux. Démarre à moitié,
+  les courbatures seront fortes.</div>
+
+<div class="co co-p"><b class="t">5. Angle mort : ta récupération n'est pas mesurée</b>
+  Tu ne portes pas ta montre la nuit : ni sommeil, ni variabilité cardiaque, et une FC de repos partielle.
+  Ta FC de repos est d'ailleurs montée à <b>61 bpm le 4 septembre</b> contre 54-55 les jours précédents — souvent
+  un signal de fatigue ou de début d'infection.
+  <br><b>Action :</b> tu passes à un port continu en octobre. À partir de là, j'intégrerai sommeil, VFC et FC de repos
+  pour ajuster automatiquement les séances — c'est précisément la période où la charge devient maximale.</div>`;
+
+/* ═════════ HISTORIQUE ═════════ */
+(function(){
+  const rows=HEBDO.slice().reverse().map(w=>{
+    const d=new Date(w.lundi+"T00:00:00");
+    return `<tr><td>${d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})}</td>
+      <td class="w">${w.km} km</td><td class="n">${w.h} h</td><td class="n">${w.sorties}</td>
+      <td class="n">${w.longest} km</td><td class="n">${w.allure||"—"}</td>
+      <td class="n">${w.dplus} m</td><td class="n">${w.fc||"—"}</td>
+      <td class="n" style="color:var(--vert);font-weight:700">${w.eff||"—"}</td>
+      <td class="n">${w.natations||"—"}</td></tr>`}).join("");
+  g("histo").innerHTML=`<tr><th>Semaine</th><th>Volume</th><th>Temps</th><th>Sorties</th><th>SL max</th>
+    <th>Allure</th><th>D+</th><th>FC</th><th>Efficience</th><th>Nat.</th></tr>${rows}`;
+})();
+
+/* ═════════ ZONES ═════════ */
+g("zlead").innerHTML=`Allures dérivées de l'objectif ${META.objectif.plan} (${META.objectif.allure}/km), `+
+ `bornes cardiaques calculées par <b>réserve cardiaque</b> — FC repos ${META.athlete.fc_repos} bpm, `+
+ `FCmax ${META.athlete.fc_max} bpm, réserve de ${META.athlete.fc_max-META.athlete.fc_repos} bpm. `+
+ `<b>Fie-toi à l'allure en priorité</b>, la FC dérive avec la chaleur et la fatigue.`;
+g("zones").innerHTML=Object.entries(ZONES).map(([k,z])=>`
+ <div class="zone" style="--zc:${z.c}">
+   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+     <span class="zbadge">${k}</span><h3 style="font-size:.9rem">${z.nom}</h3></div>
+   <div class="zrow"><span>Allure</span><b>${z.allure} /km</b></div>
+   <div class="zrow"><span>Vitesse tapis</span><b>${z.kmh} km/h</b></div>
+   <div class="zrow"><span>FC</span><b>${z.fc} bpm</b></div>
+   <p>${z.desc}</p></div>`).join("");
+
+/* ═════════ SEMAINES ═════════ */
+function renderWeeks(){
+ g("weeks").innerHTML=SEMAINES.map(w=>{
+  const tot=w.s.length, ok=w.s.filter((s,i)=>isDone(w,s,i)).length;
+  const full=ok===tot, pc=Math.round(ok/tot*100), now=w.n===curWeek;
+  const cls=[full?"done":"",w.past?"past":"",(w.type==="race"||w.n===12)?"race":"",now?"now":""].join(" ");
+  return `<div class="wk ${cls}" data-w="${w.n}">
+   <div class="wh">
+     <div class="wn">${full?"✓":w.n}</div>
+     <div class="wm"><h3>Semaine ${w.n} — ${w.titre}
+       <span class="tag tg-${now?'now':(w.type==='past'?'past':w.type)}">${now?"en cours":w.tag}</span></h3>
+       <div class="wd">${w.dates}</div></div>
+     <div class="ws"><span><b style="color:var(--tx)">${ok}</b>/${tot}</span>
+       <div class="mini"><i style="width:${pc}%"></i></div><span class="chev">›</span></div>
+   </div>
+   <div class="wb">
+     <div class="wf">${w.focus}</div>
+     ${w.prevu?`<div class="plan-prev"><b>Ce que le plan prévoyait</b>${w.prevu}</div>`:""}
+     ${w.past ? w.s.map((s,i)=>sess(w,s,i)).join("") : renderBlocks(w)}
+     ${(!w.past && w.planning) ? renderPlanning(w) : ""}
+     ${w.bilan?`<div class="bilan">${w.bilan}</div>`:""}
+   </div></div>`}).join("");
+ applyFilter();
+}
+
+const BLOCKS=[["run","🏃","Course à pied"],["strength","🏋️","Renforcement"],["swim","🏊","Natation"]];
+function renderBlocks(w){
+  return BLOCKS.map(([k,ico,label])=>{
+    const items=w.s.map((s,i)=>({s,i})).filter(x=>(x.s.k||"run")===k);
+    if(!items.length) return "";
+    return `<div class="blockgrp">
+      <div class="bgh"><span>${ico}</span>${label}<span class="bgc">${items.length}</span></div>
+      ${items.map(({s,i})=>sess(w,s,i)).join("")}
+    </div>`;
+  }).join("");
+}
+
+function archLabel(w,idx){
+  const s=w.s[idx], A=s.a?ARCHETYPES[s.a]:null;
+  return `${A?A.ico:ICO[s.k||"run"]} ${A?A.nom:s.t}`;
+}
+function renderPlanning(w){
+  const rows=w.planning.map(slot=>{
+    const jour=typeof slot.j==="number"?`Jour ${slot.j}`:`Jours ${slot.j}`;
+    let contenu;
+    if(slot.lbl) contenu=`<span class="prest">${slot.lbl}</span>`;
+    else if(slot.i) contenu=slot.i.map(idx=>archLabel(w,idx)).join(" <span class='plus'>+</span> ");
+    else contenu=`<span class="prest">😴 Repos</span>`;
+    return `<tr class="${!slot.i&&!slot.lbl?'prow-rest':''}"><td>${jour}</td><td>${contenu}</td></tr>`;
+  }).join("");
+  return `<div class="planning">
+    <div class="plh">🗓️ Proposition d'agencement sur la semaine</div>
+    <table class="tb ptb"><tr><th>Jour</th><th>Contenu</th></tr>${rows}</table>
+    <p class="pnote">Respecte l'ordre et les espacements ci-dessus ; décale librement ces jours selon ta semaine réelle.</p>
+  </div>`;
+}
+
+function sess(w,s,i){
+  const st=getS(w,i), done=isDone(w,s,i), lock=!!s.past, k=s.k||"run";
+  const A=s.a?ARCHETYPES[s.a]:null;
+  const forme=st.forme||"normal";
+  const mets=s.m?`<div class="mets">${[
+      s.m.allure&&`<span class="met hi">${s.m.allure}</span>`,
+      s.m.temps&&`<span class="met">${s.m.temps}</span>`,
+      s.m.fc&&`<span class="met hr">${s.m.fc} bpm</span>`,
+      s.m.fcmax&&`<span class="met hr">max ${s.m.fcmax}</span>`
+    ].filter(Boolean).join("")}</div>`:"";
+  return `<div class="se ${done&&!lock?"ok":""} ${lock?"pastse":""} ${st.open?"open":""}" data-k="${k}" data-done="${done}" data-w="${w.n}" data-i="${i}">
+    <div class="sh">
+      <div class="chk ${done?"on":""} ${lock?"lock":""}" ${lock?"":`data-chk="1"`}>✓</div>
+      <div class="sb">
+        <div class="st">${s.d?`<span class="sd">${s.d}</span>`:""}<span class="si">${A?A.ico:ICO[k]}</span>
+          <span class="sn">${pill(s.t)}</span></div>
+        ${s.fixe?`<div class="sx fixe">📌 ${s.fixe}</div>`:""}
+        ${s.lieu?`<div class="sx">${pill(s.lieu)}</div>`:""}
+        ${s.f?`<div class="sx" style="color:var(--tx3)">Fourchette : ${s.f[0]} à ${s.f[1]} min</div>`:""}
+        ${mets}
+        ${s.km&&!s.past?`<div class="sx" style="color:var(--tx3);margin-top:3px">📏 ≈ ${s.km} km</div>`:""}
+        ${s.note?`<div class="snote">${pill(s.note)}</div>`:""}
+        ${A?`<span class="expand" data-exp="1">${st.open?"− Masquer le détail":"+ Objectif, physiologie, adaptation, enchaînement"}</span>`:""}
+      </div>
+    </div>
+    ${A?detail(w,s,i,A,forme,st):""}
+  </div>`;
+}
+
+function detail(w,s,i,A,forme,st){
+  return `<div class="sdet">
+    <div class="blk"><div class="bl">Type · ${A.nom}</div><div class="bt">${A.but}</div></div>
+    <div class="blk"><div class="bl">Ce qui se passe dans tes muscles</div><div class="bt">${A.muscu}</div></div>
+    <div class="blk"><div class="bl">Résultat recherché</div><div class="bt">${A.resultat}</div></div>
+    <div class="blk"><div class="bl">Séance réussie si…</div><div class="bt">${A.reussite}</div></div>
+    ${(A.avant||A.apres)?`<div class="blk deps">
+      ${A.avant?`<div class="dep"><span class="depl">⬅ Avant cette séance</span><div class="bt">${A.avant}</div></div>`:""}
+      ${A.apres?`<div class="dep"><span class="depl">➡ Après cette séance</span><div class="bt">${A.apres}</div></div>`:""}
+    </div>`:""}
+    ${A.tapis?`<div class="blk"><div class="bl">🏃 Sur tapis</div><div class="bt">${A.tapis}</div></div>`:""}
+    ${A.lieux?`<div class="blk"><div class="bl">Où</div><div class="bt">${A.lieux}</div></div>`:""}
+    ${A.ravito?`<div class="blk"><div class="bl">Ravitaillement</div><div class="bt">${A.ravito}</div></div>`:""}
+    <div class="blk"><div class="bl">Comment je me sens aujourd'hui ?</div>
+      <div class="formes">${FORMES.map(([k,l])=>
+        `<button class="fbtn ${forme===k?"on":""}" data-f="${k}">${l}</button>`).join("")}</div>
+      <div class="fadapt"><b>Adaptation :</b> ${A.forme[forme]}
+        ${s.f?`<br><b>Durée :</b> ${forme==="top"?s.f[1]:forme==="bof"?s.f[0]:forme==="hs"?"réduite":Math.round((s.f[0]+s.f[1])/2)} min`:""}</div>
+    </div>
+    <div class="ressenti">
+      <div class="bl">Ressenti après la séance <span class="saved">enregistré ✓</span></div>
+      <textarea data-note="1" placeholder="Comment ça s'est passé ? Sensations, allure tenue, douleurs…">${esc(st.note||"")}</textarea>
+    </div>
+  </div>`;
+}
+
+/* ═════════ INTERACTIONS ═════════ */
+document.addEventListener("click",e=>{
+  const tab=e.target.closest(".tab");
+  if(tab){document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+    document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
+    tab.classList.add("on");g("p-"+tab.dataset.p).classList.add("on");
+    window.scrollTo({top:0,behavior:"smooth"});return}
+
+  const se=e.target.closest(".se");
+  if(se){
+    const w=SEMAINES.find(x=>x.n==+se.dataset.w), i=+se.dataset.i;
+    if(e.target.closest("[data-chk]")){
+      setS(w,i,{done:!getS(w,i).done});location.reload();return}
+    if(e.target.closest("[data-exp]")){
+      setS(w,i,{open:!getS(w,i).open});renderWeeks();
+      document.querySelector(`.wk[data-w="${w.n}"]`)?.classList.add("open");return}
+    const fb=e.target.closest(".fbtn");
+    if(fb){setS(w,i,{forme:fb.dataset.f});renderWeeks();
+      document.querySelector(`.wk[data-w="${w.n}"]`)?.classList.add("open");return}
+  }
+  const wh=e.target.closest(".wh");
+  if(wh)wh.parentElement.classList.toggle("open");
+});
+
+document.addEventListener("input",e=>{
+  const ta=e.target.closest("[data-note]");if(!ta)return;
+  const se=ta.closest(".se");
+  const w=SEMAINES.find(x=>x.n==+se.dataset.w);
+  setS(w,+se.dataset.i,{note:ta.value});
+  const s=se.querySelector(".saved");s.classList.add("show");
+  clearTimeout(ta._t);ta._t=setTimeout(()=>s.classList.remove("show"),1400);
+});
+
+let filter="all";
+function applyFilter(){
+  document.querySelectorAll(".se").forEach(el=>{
+    const k=el.dataset.k,d=el.dataset.done==="true";
+    let show=true;
+    if(filter==="todo")show=!d; else if(filter!=="all")show=k===filter;
+    el.style.display=show?"block":"none";});
+}
+document.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".filters button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");filter=b.dataset.f;
+  if(filter!=="all")document.querySelectorAll(".wk").forEach(w=>w.classList.add("open"));
+  applyFilter();});
+
+g("rst").onclick=()=>{if(confirm("Effacer toutes tes saisies (cases cochées, formes, ressentis) ?")){
+  ST={};localStorage.removeItem(KEY);location.reload()}};
+
+/* ═════════ SYNCHRONISATION MANUELLE ═════════ */
+const SYNC_CMD="Mets à jour mon suivi marathon : lis \"marathon/UPDATE.md\" et suis la procédure. "+
+  "Chrome est ouvert avec Garmin Connect connecté, tu peux récupérer les métriques Garmin.";
+g("syncbtn").onclick=()=>{
+  g("syncpanel").classList.toggle("on");
+  g("syncbtn").classList.toggle("on");
+};
+g("spcopy").onclick=async()=>{
+  const b=g("spcopy");
+  try{
+    await navigator.clipboard.writeText(SYNC_CMD);
+    b.textContent="✓ Copié";
+  }catch(e){
+    // clipboard indisponible en file:// sur certains navigateurs : on affiche le texte
+    b.textContent="📋 Copier la commande";
+    const ta=document.createElement("textarea");
+    ta.value=SYNC_CMD;
+    ta.style.cssText="width:100%;margin-top:9px;background:var(--bg);border:1px solid var(--bd);"+
+      "border-radius:8px;color:var(--tx);padding:9px;font-size:.78rem;font-family:inherit;min-height:64px";
+    b.after(ta);ta.select();return;
+  }
+  setTimeout(()=>b.textContent="📋 Copier la commande",1800);
+};
+
+renderWeeks();
+document.querySelector(`.wk[data-w="${curWeek}"]`)?.classList.add("open");
+</script>
+</body>
+</html>
