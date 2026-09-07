@@ -175,6 +175,8 @@ function renderHome(){
   const nextN=curWeek+1;
   const wNext=SEMAINES.find(x=>x.n===nextN);
 
+  renderHomeSynthese(wCur,okCur,pcCur);
+
   g("focusCards").innerHTML=`
     <button class="focus-card nav-link" data-p="semaine-cours">
       <div class="fc-top"><span class="fc-badge">Semaine ${wCur.n}</span>${ICONS.chev}</div>
@@ -211,6 +213,56 @@ function renderHome(){
       <span class="gv" style="color:var(--soleil)">${Math.round(S.km_fait)} km</span></div>
       <div class="bar"><i style="width:${pk}%"></i></div>
       <div class="gsub"><span><b style="color:var(--tx)">${pk}%</b> du plan</span><span>${Math.round(S.km_prevu)} km au total</span></div></div>`;
+}
+
+/* ============================================================
+   RENDU — SYNTHÈSE HOME (100 % calculée à chaque chargement,
+   jamais de texte figé — c'est le point qui manquait)
+   ============================================================ */
+function renderHomeSynthese(wCur,okCur,pcCur){
+  const el=g("homeSynthese"); if(!el) return;
+  const H=HEBDO, last=H[H.length-1];
+  const d0=new Date(last.lundi+"T00:00:00"), d1=new Date(d0); d1.setDate(d1.getDate()+6);
+  const rangeTxt=`${d0.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})} – ${d1.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}`;
+
+  const daysToRace=Math.max(0,Math.ceil((RACE-NOW)/864e5));
+  const pcPlan=Math.round(S.fait/S.tot*100);
+  const kmFait=Math.round(S.km_fait), kmPrevu=Math.round(S.km_prevu);
+
+  const tEff=trend(H.map(x=>x.eff));
+  const tVol=trend(H.map(x=>x.km));
+  const tLong=trend(H.map(x=>x.longest));
+
+  let badge,badgeTxt;
+  if(tEff && tEff.pct>3){badge="var(--vert)";badgeTxt="🟢 En progression";}
+  else if(tEff && tEff.pct<-8){badge="var(--corail)";badgeTxt="🟠 À surveiller";}
+  else {badge="var(--azur-l)";badgeTxt="🔵 Stable";}
+
+  const effTxt=tEff
+    ? `${tEff.pct>0?"en hausse":"en baisse"} de ${Math.abs(tEff.pct).toFixed(0)} % sur les 3 dernières semaines`
+    : null;
+
+  const allureAlerte=last.allure_min<5.55
+    ? `<span style="color:var(--soleil)">⚠️ toujours trop rapide pour du Z1 — vise 6:00-6:30/km sur tes footings.</span>`
+    : `plus proche de la Z1 cible — continue.`;
+
+  const pred=GARMIN.predictions.marathon.slice(0,4).replace(':','h');
+  const objectifTxt=META.objectif.plan;
+
+  el.innerHTML=`
+  <div class="co co-i" style="border-color:${badge}">
+    <b class="t" style="color:${badge}">${badgeTxt}</b>
+    Semaine <b>${wCur.n}</b>/12 · <b>${daysToRace} jours</b> avant le marathon. <b>${okCur}/${wCur.s.length}</b> séances
+    cochées cette semaine, <b>${pcPlan} %</b> du plan validé au total (<b>${kmFait}</b> km sur ${kmPrevu} prévus).
+    <br><br>
+    Ta dernière semaine complète (${rangeTxt}) : <b>${last.km} km</b> en ${last.sorties} sorties, dont
+    <b>${last.longest} km</b> en sortie longue à ${last.allure}/km${last.fc?` (FC moy. ${last.fc} bpm)`:""}.
+    Ton efficience — le meilleur indicateur de progrès — est actuellement à <b>${last.eff??"—"}</b> m/battement${effTxt?`, ${effTxt}`:" (encore trop peu de semaines avec FC pour dégager une tendance)"}.
+    Allure moyenne toutes sorties : ${allureAlerte}
+    <br><br>
+    Côté Garmin, la prédiction marathon actuelle est de <b>${pred}</b> pour un objectif fixé à <b>${objectifTxt}</b>.
+    Cap de la semaine : <b>${wCur.titre}</b>.
+  </div>`;
 }
 
 /* ============================================================
@@ -486,9 +538,15 @@ function renderAnalyse(){
    RENDU — HISTORIQUE
    ============================================================ */
 function renderHisto(){
-  const rows=HEBDO.slice().reverse().map(w=>{
+  const rows=HEBDO.slice().reverse().map((w,i)=>{
     const d=new Date(w.lundi+"T00:00:00");
-    return `<tr><td>${d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})}</td>
+    const fin=new Date(d); fin.setDate(fin.getDate()+6);
+    const sameMonth=d.getMonth()===fin.getMonth();
+    const range=sameMonth
+      ?`${d.getDate()}–${fin.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}`
+      :`${d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}–${fin.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}`;
+    const isLast=i===0;
+    return `<tr${isLast?' style="background:rgba(45,212,191,.06)"':''}><td>${range}${isLast?' <span class="pill" style="--pb:#2dd4bf33;--pc:#2dd4bf">dernière</span>':''}</td>
       <td class="w">${w.km} km</td><td class="n">${w.h} h</td><td class="n">${w.sorties}</td>
       <td class="n">${w.longest} km</td><td class="n">${w.allure||"—"}</td>
       <td class="n">${w.dplus} m</td><td class="n">${w.fc||"—"}</td>
