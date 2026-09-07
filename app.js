@@ -134,6 +134,18 @@ function trend(vals,inverse){
   return{pct:d,good:inverse?d<0:d>0};
 }
 
+/* ---------- TEMPS / PRÉDICTIONS ---------- */
+function timeToSec(t){
+  const p=t.split(":").map(Number);
+  return p.length===3 ? p[0]*3600+p[1]*60+p[2] : p[0]*60+p[1];
+}
+function secToHM(s){
+  let h=Math.floor(s/3600), m=Math.round((s%3600)/60);
+  if(m===60){h++;m=0;}
+  return `${h}h${String(m).padStart(2,"0")}`;
+}
+function riegel(t1sec,d1,d2){ return t1sec*Math.pow(d2/d1,1.06); }
+
 /* ---------- ARCHÉTYPES : famille "qualité/force" pour stats & conseils ---------- */
 const QUAL_FAM=["Qualité","Force","Compétition"];
 function weekStats(w){
@@ -487,51 +499,91 @@ function renderWithings(){
    RENDU — ANALYSE
    ============================================================ */
 function renderAnalyse(){
+  const H=HEBDO, last=H[H.length-1];
+  const effArr=H.filter(w=>w.eff!=null);
+  const effFirst=effArr[0]?.eff, effLast=effArr[effArr.length-1]?.eff;
+  const effPct=(effFirst!=null&&effLast!=null&&effArr.length>1)?Math.round((effLast-effFirst)/effFirst*100):null;
+
+  const longestRecord=Math.max(...H.map(w=>w.longest));
+  const pctMarathon=Math.round(longestRecord/42.195*100);
+
+  const t5k=timeToSec(GARMIN.predictions["5k"]);
+  const potentielSec=riegel(t5k,5,42.195);
+  const predSec=timeToSec(GARMIN.predictions.marathon);
+  const gapMin=Math.round((predSec-potentielSec)/60);
+
+  const fcSerie=GARMIN.fc_repos_serie||[];
+  const fcVals=fcSerie.map(x=>x.v);
+  const fcLatest=fcVals.length?fcVals[fcVals.length-1]:null;
+  const fcMin=fcVals.length?Math.min(...fcVals):null, fcMax=fcVals.length?Math.max(...fcVals):null;
+
+  // séances de seuil (le levier le plus rentable)
+  const seuilAll=[]; SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.a==="seuil"||s.a==="seuil_2000") seuilAll.push({w,i}); }));
+  const seuilDone=seuilAll.filter(({w,i})=>isDone(w,w.s[i],i)).length;
+
+  // renforcement
+  let renfoTot=0,renfoDone=0;
+  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.k==="strength"){ renfoTot++; if(isDone(w,s,i)) renfoDone++; } }));
+
+  // séances de qualité (VMA/seuil/côtes/course) tous types confondus
+  let qualTot=0,qualDone=0;
+  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{
+    const A=s.a?ARCHETYPES[s.a]:null;
+    if(A&&QUAL_FAM.includes(A.fam)){ qualTot++; if(isDone(w,s,i)) qualDone++; }
+  }));
+
   g("analyse").innerHTML=`
-<div class="co co-g"><b class="t">Ton profil : un gros moteur sur des jambes sous-entraînées</b>
-  Ton VO2max de <b>52 ml/kg/min</b> te place dans le top 10 % des hommes de ton âge, et ton cœur tournait à
-  <b>49 bpm au repos</b> fin août <span style="color:var(--tx3)">(mesuré en vacances, donc plutôt optimiste — ta vraie
-  ligne de base en rythme de vie normal sera connue quand tu reprendras le port continu)</span>. Côté cardio-respiratoire,
-  tu as le moteur d'un coureur proche de 3h26.
-  <br><br>Mais un marathon ne se joue pas seulement là. Il se joue dans ta capacité à encaisser
-  <b>~35 000 impacts</b> à 2,5-3 fois ton poids de corps, et à alimenter tes muscles pendant 3h45.
-  Ta plus longue sortie de l'été fait 16,4 km : tes fibres n'ont jamais été confrontées à ce que tu leur demanderas.</div>
+<div class="co co-g"><b class="t">Ton profil, recalculé à chaque synchro</b>
+  VO2max <b>${GARMIN.vo2max} ml/kg/min</b> — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
+  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
+  <br><br>Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
+  Ton 5 km prédit (${GARMIN.predictions["5k"]}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
+  (formule de Riegel) — Garmin prédit en réalité <b>${secToHM(predSec)}</b>. L'écart, <b>${gapMin} minutes</b>, chiffre ton
+  déficit d'endurance spécifique : c'est exactement ce que le plan comble, semaine après semaine.</div>
 <div class="g g2">
-  <div class="card"><h3>🔋 Ce qui limite : le carburant</h3>
-    <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène. Un marathon en coûte
-    ~2 800. Le mur du km 32, c'est ce moment où le réservoir se vide et où le corps doit basculer sur les graisses.
-    <br><br><b>Ce que le plan y fait :</b> les sorties longues au-delà de 1h45 entraînent précisément cette bascule.</p></div>
-  <div class="card"><h3>🦵 Ce qui casse : les fibres</h3>
+  <div class="card"><h3>🔋 Le carburant</h3>
+    <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène, un marathon en coûte ~2 800.
+    Avec ${longestRecord} km au compteur, tu as déjà testé ce mécanisme sur <b>${pctMarathon} %</b> de la distance de course.
+    <br><br><b>Ce que le plan y fait :</b> chaque sortie longue au-delà de 1h45 entraîne précisément cette bascule vers les graisses.</p></div>
+  <div class="card"><h3>🦵 Les fibres</h3>
     <p class="lead" style="margin:8px 0 0">À chaque foulée, tes quadriceps freinent la descente en contraction
-    <b>excentrique</b> — le mode qui crée le plus de micro-lésions. Après 30 km, l'accumulation dégrade ta foulée.
-    <br><br><b>Ce que le plan y fait :</b> les côtes, le renfo excentrique et l'unilatéral construisent des fibres qui résistent.</p></div>
-  <div class="card"><h3>❤️ Ce qui va bien : le cardio</h3>
-    <p class="lead" style="margin:8px 0 0">14,2 km à 5:26/km à <b>137 bpm</b>, soit 74 % de ta FCmax. Ton efficience
-    progresse de <b>1,214 à 1,331 m par battement</b> en trois semaines.
-    <br><br><b>Conséquence :</b> tout le plan sert à faire remonter tes jambes au niveau de ton cœur.</p></div>
-  <div class="card"><h3>🧠 Ce qui s'apprend : l'allure</h3>
-    <p class="lead" style="margin:8px 0 0">Tenir 5:20/km pendant 42 km demande un automatisme, pas un calcul.
-    <br><br><b>Total sur le bloc :</b> environ 3 heures cumulées à allure marathon, dont la majorité après 1 h de course.</p></div>
+    <b>excentrique</b> — le mode qui crée le plus de micro-lésions.
+    <br><br><b>Ce que le plan y fait :</b> <b>${renfoDone}/${renfoTot}</b> séances de renfo déjà réalisées, dont le travail
+    unilatéral (leg press une jambe, fentes bulgares) qui manquait avant le bloc.</p></div>
+  <div class="card"><h3>❤️ Le cardio</h3>
+    <p class="lead" style="margin:8px 0 0">Ta dernière semaine complète : <b>${last.allure}/km</b>${last.fc?` à ${last.fc} bpm`:""}.
+    ${effPct!=null?`Ton efficience a évolué de <b>${effFirst} à ${effLast} m/battement</b> (${effPct>0?"+":""}${effPct} %)
+    depuis que la donnée FC existe.`:"Pas encore assez de semaines avec FC pour une tendance fiable."}
+    <br><br><b>Conséquence :</b> le plan sert surtout à faire remonter tes jambes au niveau de ton cœur.</p></div>
+  <div class="card"><h3>🧠 L'allure</h3>
+    <p class="lead" style="margin:8px 0 0"><b>${qualDone}/${qualTot}</b> séances de qualité (VMA, seuil, côtes, allure
+    marathon...) déjà réalisées sur l'ensemble du bloc.
+    <br><br><b>Logique :</b> chaque répétition à 5:20/km ancre un peu plus l'automatisme, jusqu'à ce que ça ne demande
+    plus de concentration le jour J.</p></div>
 </div>`;
+
+  const allureBad=last.allure_min<5.9, allureOk=last.allure_min>=6.4;
+  const slDone=longestRecord>=30, slOk=longestRecord>=20;
+  const renfoRatio=renfoTot?Math.round(renfoDone/renfoTot*100):0;
+
   g("ameliorations").innerHTML=`
-<div class="co co-w"><b class="t">1. Tes footings sont trop rapides — priorité absolue</b>
-  Tes sorties « faciles » tournent à 5:26-5:28/km, soit ton allure marathon cible.
-  <br><b>Action :</b> tes Z1 à <b>6:00-6:30/km</b>.</div>
-<div class="co co-w"><b class="t">2. Ton volume de sortie longue est très insuffisant</b>
-  16,4 km maximum sur l'été, pour un objectif à 42,2 km.
-  <br><b>Action :</b> la progression est déjà écrite (18 → 21 → 24 → 27 → 30 km, semi test en solo au passage).</div>
-<div class="co co-i"><b class="t">3. Tu n'as jamais travaillé au seuil</b>
-  Aucune séance de type 5 × 6′ en Z4 dans ton historique.
-  <br><b>Action :</b> quatre séances de seuil sont programmées (semaines 7, 10 et 11).</div>
-<div class="co co-i"><b class="t">4. Ton renfo est efficace mais incomplet</b>
-  Bonne base, mais 100 % sur machines guidées. Aucun travail unilatéral.
-  <br><b>Action :</b> séance B ajoutée — leg press une jambe, fentes bulgares, mollets unipodaux.</div>
-<div class="co co-p"><b class="t">5. Angle mort : pas encore de vraie ligne de base de récupération</b>
-  Ta FC de repos a oscillé entre 54 et 61 bpm début septembre, contre 49 bpm fin août — mais ce 49 vient de tes
-  vacances (relâché, sans le stress du quotidien ni la charge d'entraînement). Ce n'est pas la bonne référence pour
-  juger une hausse : on ne peut pas encore dire si 58-61 est anormal ou simplement ton niveau normal en vie active.
+<div class="co ${allureBad?'co-w':allureOk?'co-v':'co-i'}"><b class="t">1. Allure de tes footings — ${allureBad?"toujours trop rapide":allureOk?"dans la bonne zone":"en progrès"}</b>
+  Dernière semaine : <b>${last.allure}/km</b> en moyenne toutes sorties confondues. Cible Z1 : 6:00-6:30/km.
+  <br><b>Verdict :</b> ${allureOk?"tu y es, continue comme ça.":allureBad?"c'est encore ton allure marathon, pas ta zone de récup.":"tu ralentis, c'est le bon sens — pousse encore un peu."}</div>
+<div class="co ${slDone?'co-v':slOk?'co-i':'co-w'}"><b class="t">2. Sortie longue — record actuel ${longestRecord} km</b>
+  Objectif final : 42,2 km le jour J, avec un pic d'entraînement à 30 km en semaine 10.
+  <br><b>Statut :</b> ${slDone?"pic atteint, la suite c'est l'affûtage.":slOk?"en bonne trajectoire, continue la progression.":"c'est le facteur n°1, ne saute aucune sortie longue."}</div>
+<div class="co ${seuilDone>=seuilAll.length&&seuilAll.length?'co-v':'co-i'}"><b class="t">3. Travail au seuil — ${seuilDone}/${seuilAll.length} séances faites</b>
+  Le levier le plus rentable pour élever ton plafond aérobie.
+  <br><b>Statut :</b> ${seuilDone===0?"aucune encore, la première arrive en semaine 6-7.":seuilDone<seuilAll.length?"en cours, garde l'allure stable du 1ᵉʳ au dernier bloc.":"terminé, ton plafond aérobie a été sollicité tout le bloc."}</div>
+<div class="co ${renfoRatio>=70?'co-v':'co-i'}"><b class="t">4. Renforcement — ${renfoDone}/${renfoTot} séances faites</b>
+  Le complément unilatéral qui manquait avant le bloc (leg press une jambe, fentes bulgares, mollets unipodaux).
+  <br><b>Statut :</b> ${renfoDone===0?"pas encore démarré sur le bloc.":`${renfoRatio} % du renfo prévu réalisé à ce stade.`}</div>
+<div class="co co-p"><b class="t">5. FC de repos — pas encore de vraie ligne de base</b>
+  Valeurs récentes entre <b>${fcMin??"—"}</b> et <b>${fcMax??"—"} bpm</b> (dernière : ${fcLatest??"—"}). La référence de fin août (49 bpm)
+  vient de tes vacances et n'est pas fiable pour juger une hausse.
   <br><b>Action :</b> port continu de la montre prévu dans quelques semaines pour obtenir sommeil, VFC et une vraie
-  ligne de base en contexte d'entraînement — c'est à partir de là que les écarts deviendront réellement interprétables.</div>`;
+  référence en contexte de vie active.</div>`;
 }
 
 /* ============================================================
