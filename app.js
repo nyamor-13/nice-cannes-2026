@@ -374,6 +374,64 @@ function renderProjection(){
 }
 
 /* ============================================================
+   RENDU — WITHINGS (poids & composition, relevé manuel)
+   ============================================================ */
+function trendPill(v,goodDir,unit){
+  if(v==null) return "";
+  let cls="tr-eq";
+  if(Math.abs(v)>=0.05 && (goodDir==="up"||goodDir==="down")){
+    const good=goodDir==="up"?v>0:v<0;
+    cls=good?"tr-up":"tr-dn";
+  }
+  const arrow=v>0?"▲":(v<0?"▼":"—");
+  return `<span class="trend ${cls}">${arrow} ${Math.abs(v).toFixed(1)}${unit||""}</span>`;
+}
+function renderWithings(){
+  const w=window.WITHINGS;
+  const leadEl=g("withingsLead"), bodyEl=g("withings");
+  if(!leadEl||!bodyEl) return;
+  if(!w){
+    bodyEl.innerHTML=`<div class="co co-i">Pas encore de relevé Withings enregistré.</div>`;
+    return;
+  }
+  const d=new Date(w.date+"T00:00:00");
+  leadEl.innerHTML=`Relevé <b style="color:var(--tx)">manuel</b> — lu à la demande dans l'app Withings de ton Mac,
+    pas de synchronisation automatique. Dernier point : <b style="color:var(--vert)">${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</b>.`;
+  bodyEl.innerHTML=`
+  <div class="g g3">
+    <div class="kpi"><div class="kl">Poids</div>
+      <div class="kv" style="color:var(--tx)">${w.poids} <span style="font-size:.9rem;color:var(--tx3)">${w.poids_unite}</span></div>
+      <div class="ku">${w.poids_statut}</div>
+      ${trendPill(w.poids_tendance_kg,"neutre"," kg")}
+      <div class="kn">${w.periode}</div></div>
+    <div class="kpi"><div class="kl">IMC</div>
+      <div class="kv" style="color:var(--vert)">${w.imc}</div>
+      <div class="ku">${w.imc_statut}</div>
+      ${trendPill(w.imc_tendance,"neutre")}
+      <div class="kn">Sur ${w.taille_cm} cm.</div></div>
+    <div class="kpi"><div class="kl">Masse musculaire</div>
+      <div class="kv" style="color:var(--azur-l)">${w.muscle_pct} %</div>
+      ${trendPill(w.muscle_tendance_pct,"up"," %")}
+      <div class="kn">${w.periode}</div></div>
+    <div class="kpi"><div class="kl">Masse grasse</div>
+      <div class="kv" style="color:var(--soleil)">${w.graisse_pct} %</div>
+      ${trendPill(w.graisse_tendance_pct,"down"," %")}
+      <div class="kn">${w.periode}</div></div>
+    <div class="kpi"><div class="kl">Masse maigre</div>
+      <div class="kv" style="color:var(--tx)">${w.masse_maigre_statut}</div>
+      ${trendPill(w.masse_maigre_tendance_pct,"up"," %")}
+      <div class="kn">Muscles + os + eau + organes.</div></div>
+    <div class="kpi"><div class="kl">Masse osseuse</div>
+      <div class="kv" style="color:var(--tx)">${w.masse_osseuse_statut}</div>
+      <div class="kn">Stable sur la période.</div></div>
+  </div>
+  <div class="co co-v" style="margin-top:12px"><b class="t">Ce que ça dit pour le bloc</b>
+    Poids stable, muscle en légère hausse, gras en légère baisse : la composition évolue dans le bon sens pendant
+    la montée en charge. Rien à ajuster dans le plan pour l'instant — demande-moi un nouveau relevé quand tu veux un point.
+  </div>`;
+}
+
+/* ============================================================
    RENDU — ANALYSE
    ============================================================ */
 function renderAnalyse(){
@@ -655,6 +713,7 @@ renderFocusPage("focusProchaineBody",curWeek+1,false);
 renderGauges();
 renderKpis();
 renderProjection();
+renderWithings();
 renderAnalyse();
 renderHisto();
 renderZones();
