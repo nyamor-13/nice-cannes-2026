@@ -437,8 +437,10 @@ function renderWithings(){
 function renderAnalyse(){
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil : un gros moteur sur des jambes sous-entraînées</b>
-  Ton VO2max de <b>52 ml/kg/min</b> te place dans le top 10 % des hommes de ton âge, et ton cœur tourne à
-  <b>49 bpm au repos</b>. Côté cardio-respiratoire, tu as le moteur d'un coureur à 3h26.
+  Ton VO2max de <b>52 ml/kg/min</b> te place dans le top 10 % des hommes de ton âge, et ton cœur tournait à
+  <b>49 bpm au repos</b> fin août <span style="color:var(--tx3)">(mesuré en vacances, donc plutôt optimiste — ta vraie
+  ligne de base en rythme de vie normal sera connue quand tu reprendras le port continu)</span>. Côté cardio-respiratoire,
+  tu as le moteur d'un coureur proche de 3h26.
   <br><br>Mais un marathon ne se joue pas seulement là. Il se joue dans ta capacité à encaisser
   <b>~35 000 impacts</b> à 2,5-3 fois ton poids de corps, et à alimenter tes muscles pendant 3h45.
   Ta plus longue sortie de l'été fait 16,4 km : tes fibres n'ont jamais été confrontées à ce que tu leur demanderas.</div>
@@ -472,9 +474,12 @@ function renderAnalyse(){
 <div class="co co-i"><b class="t">4. Ton renfo est efficace mais incomplet</b>
   Bonne base, mais 100 % sur machines guidées. Aucun travail unilatéral.
   <br><b>Action :</b> séance B ajoutée — leg press une jambe, fentes bulgares, mollets unipodaux.</div>
-<div class="co co-p"><b class="t">5. Angle mort : ta récupération n'est pas mesurée</b>
-  Ta FC de repos est montée à <b>61 bpm le 4 septembre</b> contre 54-55 les jours précédents.
-  <br><b>Action :</b> port continu de la montre en octobre pour intégrer sommeil et VFC.</div>`;
+<div class="co co-p"><b class="t">5. Angle mort : pas encore de vraie ligne de base de récupération</b>
+  Ta FC de repos a oscillé entre 54 et 61 bpm début septembre, contre 49 bpm fin août — mais ce 49 vient de tes
+  vacances (relâché, sans le stress du quotidien ni la charge d'entraînement). Ce n'est pas la bonne référence pour
+  juger une hausse : on ne peut pas encore dire si 58-61 est anormal ou simplement ton niveau normal en vie active.
+  <br><b>Action :</b> port continu de la montre prévu dans quelques semaines pour obtenir sommeil, VFC et une vraie
+  ligne de base en contexte d'entraînement — c'est à partir de là que les écarts deviendront réellement interprétables.</div>`;
 }
 
 /* ============================================================

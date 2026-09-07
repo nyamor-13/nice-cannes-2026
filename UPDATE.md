@@ -111,7 +111,15 @@ Ne jamais commiter autre chose que `data-strava.js` sans que ce soit expliciteme
   sont dans les archétypes (`tapis`) — 14,5 km/h pour le VO2max, 13,1 pour les 1000 m,
   12,6 pour les 2000 m, 6-8 % d'inclinaison pour les côtes. Les tapis étant souvent mal calibrés,
   croiser avec la FC plutôt que de se fier aveuglément à la vitesse affichée.
-- **FC de repos** : une hausse de plus de 7 bpm au-dessus de la moyenne (49) sur deux jours
-  consécutifs signale une fatigue ou une infection — le signaler explicitement.
+- **FC de repos — la référence de 49 bpm n'est PAS fiable** : elle vient de fin août, pendant les vacances de
+  Romain (relâché, sans le stress ni la charge d'entraînement du quotidien). Depuis la rentrée, ses valeurs
+  tournent plutôt entre 54 et 61 bpm — c'est probablement ça sa vraie zone normale en vie active, pas une dérive.
+  **Ne plus déclencher d'alerte automatique sur un simple écart par rapport à 49.** Continuer à enregistrer
+  `fc_repos_serie` jour par jour (utile pour la tendance), mais ne signaler explicitement que :
+  (a) une valeur qui dépasse tout ce qui a été observé depuis la rentrée (>62-63 bpm), ou
+  (b) une hausse brutale et soutenue sur 3+ jours consécutifs par rapport aux 7 derniers jours glissants.
+  Romain reprend le port continu de la montre dans quelques semaines : à ce moment-là, redéfinir `fc_repos`
+  sur la moyenne des 2-3 premières semaines de port continu (vie normale, hors vacances) plutôt que sur 49,
+  et réactiver un vrai seuil d'alerte (+7 bpm) une fois cette nouvelle référence en place.
 - **Allure des footings** : le problème n°1 de Romain est de courir ses sorties faciles trop vite
   (5:26/km au lieu de 6:00-6:30). Si l'allure moyenne hebdomadaire ne descend pas, le dire.
