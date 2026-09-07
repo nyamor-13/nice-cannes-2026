@@ -3,9 +3,9 @@
    Source : Strava (+ Garmin quand disponible)
    ============================================================ */
 
-window.MAJ = {"date": "2026-09-05T17:31:06", "source": "Strava", "garmin": true};
+window.MAJ = {"date": "2026-09-07T11:25:00", "source": "Strava", "garmin": true};
 
-window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}], "predictions": {"5k": "21:32", "10k": "45:58", "semi": "1:44:13", "marathon": "3:54:43"}, "sommeil": null, "vfc": null};
+window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}], "predictions": {"5k": "21:30", "10k": "45:54", "semi": "1:43:56", "marathon": "3:54:10"}, "sommeil": null, "vfc": null};
 
 window.HEBDO = [
  {
@@ -205,19 +205,19 @@ window.HEBDO = [
  },
  {
   "lundi": "2026-08-31",
-  "km": 41.9,
-  "h": 3.73,
-  "dplus": 96,
-  "sorties": 4,
+  "km": 56.9,
+  "h": 5.19,
+  "dplus": 187,
+  "sorties": 5,
   "natations": 1,
   "renfo": 1,
-  "longest": 14.2,
-  "allure": "5:20",
-  "allure_min": 5.339,
+  "longest": 15.0,
+  "allure": "5:28",
+  "allure_min": 5.473,
   "fc": 140.7,
-  "eff": 1.331,
+  "eff": 1.299,
   "nat_m": 1675
  }
 ];
 
-window.TOTAUX = {"km": 557.6, "h": 53.0, "sorties": 56, "natations": 15};
+window.TOTAUX = {"km": 572.6, "h": 54.5, "sorties": 57, "natations": 15};
