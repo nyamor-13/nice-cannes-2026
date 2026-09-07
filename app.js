@@ -459,8 +459,7 @@ function renderWithings(){
     return;
   }
   const d=new Date(w.date+"T00:00:00");
-  leadEl.innerHTML=`Relevé <b style="color:var(--tx)">manuel</b> — lu à la demande dans l'app Withings de ton Mac,
-    pas de synchronisation automatique. Dernier point : <b style="color:var(--vert)">${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</b>.`;
+  leadEl.innerHTML=`Dernier point : <b style="color:var(--vert)">${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</b>.`;
   bodyEl.innerHTML=`
   <div class="g g3">
     <div class="kpi"><div class="kl">Poids</div>
@@ -533,7 +532,7 @@ function renderAnalyse(){
   }));
 
   g("analyse").innerHTML=`
-<div class="co co-g"><b class="t">Ton profil, recalculé à chaque synchro</b>
+<div class="co co-g"><b class="t">Ton profil</b>
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b> — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
   ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
   <br><br>Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
