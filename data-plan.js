@@ -82,7 +82,7 @@ window.ARCHETYPES = {
           normal:"Séance telle quelle.",
           bof:"3 répétitions au lieu de 4, récupération à 4′.",
           hs:"Remplace par 40′ en Z1. Le VO2max sur jambes mortes ne produit que de la fatigue." },
-  tapis:"Sur tapis : <b>14,5 km/h à 1 % d'inclinaison</b>. Récupération 3 min à 7-8 km/h. Ne tiens jamais la rampe — ça fausse l'effort et la posture." },
+  tapis:"Sur tapis : vise <b>14,5 km/h à 1 % d'inclinaison</b>, mais <b>la FC prime sur la vitesse affichée</b> — si tu dépasses 90 % de FCmax (167 bpm) avant la fin d'un palier, n'accélère pas davantage, l'objectif physiologique est déjà atteint. Beaucoup de tapis sont mal calibrés : la FC est le signal fiable, pas le chiffre affiché. Récupération 3 min à 7-8 km/h. Ne tiens jamais la rampe — ça fausse l'effort et la posture." },
 
  seuil_2000:{ nom:"Seuil — 2000 m répétés", ico:"🎯", fam:"Qualité",
   but:"Élever le seuil lactique en accumulant du volume à allure semi-marathon.",
