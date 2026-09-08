@@ -714,6 +714,13 @@ function sess(w,s,i){
 function detail(w,s,i,A,forme,st){
   return `<div class="sdet">
     <div class="blk"><div class="bl">Type · ${A.nom}</div><div class="bt">${A.but}</div></div>
+    ${A.exercices?`<div class="blk"><div class="bl">Exercices</div>
+      <div class="tbwrap"><table class="tb extb">
+        <tr><th>Exercice</th><th>Séries</th><th>Reps</th><th>Charge</th><th>Tempo</th></tr>
+        ${A.exercices.map(e=>`<tr><td>${e.nom}</td><td class="n">${e.series}</td><td class="n">${e.reps}</td><td class="n">${e.charge}</td><td>${e.tempo}</td></tr>`).join("")}
+      </table></div>
+      <p class="exnote">Séries × reps données pour une forme <b>normale</b> — utilise les boutons de forme ci-dessous pour l'ajustement du jour (charge, nombre de séries…).</p>
+    </div>`:""}
     <div class="blk"><div class="bl">Ce qui se passe dans tes muscles</div><div class="bt">${A.muscu}</div></div>
     <div class="blk"><div class="bl">Résultat recherché</div><div class="bt">${A.resultat}</div></div>
     <div class="blk"><div class="bl">Séance réussie si…</div><div class="bt">${A.reussite}</div></div>

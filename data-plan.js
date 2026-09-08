@@ -201,7 +201,17 @@ window.ARCHETYPES = {
   forme:{ top:"Monte de 5-10 kg sur leg press et hip thrust.",
           normal:"Charges de la semaine précédente.",
           bof:"Réduis les charges de 20 %, garde le nombre de séries.",
-          hs:"Saute la séance. Le renfo sert la course, pas l'inverse." }},
+          hs:"Saute la séance. Le renfo sert la course, pas l'inverse." },
+  exercices:[
+   {nom:"Leg press",series:4,reps:"12",charge:"210 kg",tempo:"3 s descente"},
+   {nom:"Leg curl assis",series:4,reps:"12",charge:"60 kg",tempo:"4 s retour"},
+   {nom:"Hip thrust",series:4,reps:"12",charge:"70 kg",tempo:"1 s bloqué en haut"},
+   {nom:"Abduction hanche",series:3,reps:"20",charge:"95 kg",tempo:"contrôlé"},
+   {nom:"Adduction hanche",series:3,reps:"15",charge:"80 kg",tempo:"contrôlé"},
+   {nom:"Mollets assis",series:4,reps:"15",charge:"61 kg",tempo:"3 s descente"},
+   {nom:"Back extension",series:3,reps:"15",charge:"10 kg",tempo:"contrôlé"},
+   {nom:"Pallof press",series:3,reps:"10/côté",charge:"20 kg poulie",tempo:"2 s tenue"}
+  ]},
 
  renfo_b:{ nom:"Renfo B — Unilatéral", ico:"🦵", fam:"Renforcement",
   but:"Apprendre à ton corps à se stabiliser sur une jambe.",
@@ -213,7 +223,15 @@ window.ARCHETYPES = {
   forme:{ top:"Format complet, haltères.",
           normal:"Format complet.",
           bof:"2 séries au lieu de 3, poids du corps.",
-          hs:"Saute la séance." }},
+          hs:"Saute la séance." },
+  exercices:[
+   {nom:"Leg press une jambe",series:3,reps:"10/jambe",charge:"70 kg",tempo:"3 s descente"},
+   {nom:"Fentes bulgares",series:3,reps:"8/jambe",charge:"2 × 8 kg",tempo:"descente lente"},
+   {nom:"Step-up sur banc",series:3,reps:"10/jambe",charge:"2 × 8 kg",tempo:"descente freinée"},
+   {nom:"Glute kickback",series:3,reps:"15/jambe",charge:"27 kg",tempo:"1 s pause"},
+   {nom:"Mollets debout, une jambe",series:3,reps:"12/jambe",charge:"poids du corps",tempo:"3 s descente"},
+   {nom:"Planche + planche latérale",series:3,reps:"45″ + 30″/côté",charge:"—",tempo:"—"}
+  ]},
 
  natation:{ nom:"Natation", ico:"🏊", fam:"Récupération",
   but:"Volume aérobie et récupération active, sans impact.",
