@@ -62,6 +62,23 @@ window.TOTAUX  = {"km":0,"h":0,"sorties":0,"natations":0};
 Ne **jamais** cocher les séances à la place de Romain dans `data-plan.js` — c'est lui qui coche
 dans l'app. Les seules séances marquées `past:1` sont les semaines 1 à 3, figées historiquement.
 
+## Analyse d'adaptation — obligatoire à chaque sync, jamais silencieuse
+
+Après avoir régénéré `data-strava.js`, analyser chaque nouvelle séance de qualité (VMA, seuil, côtes,
+allure marathon) par rapport à sa cible du plan (`data-plan.js` → archétype → champ `tapis` ou zone
+FC/allure). Comparer : allure/vitesse réellement tenue vs cible, et FC atteinte vs zone attendue.
+
+**Toujours conclure explicitement dans le compte-rendu**, même si rien ne change :
+- Si la séance est cohérente avec la cible (ou l'écart s'explique par la FC — ex. vitesse sous la cible
+  mais FC proche du max, donc effort réel conforme) → **le dire clairement et expliquer pourquoi aucun
+  ajustement n'est proposé.**
+- Si un écart semble réel et mérite d'ajuster une cible du plan (vitesse tapis, zone, charge de renfo...)
+  → **proposer l'ajustement précis dans le chat et attendre l'accord explicite de Romain avant de
+  modifier `data-plan.js`.** Ne jamais modifier `data-plan.js` de sa propre initiative pendant une sync.
+- Une seule séance sous la cible ne justifie généralement pas un ajustement immédiat (peut être la
+  première fois sur ce format, une fatigue ponctuelle, un tapis mal calibré...) — le signaler comme
+  "à surveiller sur les 2-3 prochaines séances du même type" plutôt que de changer la cible tout de suite.
+
 ## Déclenchement
 
 - **Automatique** : tâche planifiée `marathon-nice-cannes-maj`, tous les jours à 12h01.
