@@ -31,10 +31,17 @@ c'est pour ça que seul `data-strava.js` est réécrit.
 3. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
-   - FC repos : `connect.garmin.com/app/heart-rate/<AAAA-MM-JJ>/2` (vue 4 semaines)
-   - À partir d'octobre 2026, Romain porte sa montre en continu : récupérer aussi
-     le **sommeil** (`/app/sleep/<date>`) et la **VFC** (`/app/hrv-status`), et les ajouter
-     dans `window.GARMIN` (`sommeil`, `vfc`). Ces deux champs sont à `null` tant qu'ils n'existent pas.
+   - **FC repos : EN PAUSE jusqu'à fin septembre 2026** (demande explicite de Romain le 9 sept).
+     Ne pas aller consulter `/app/heart-rate/...` pendant cette période, ni chercher à enrichir
+     `fc_repos_serie`. Laisser `GARMIN.fc_repos_serie` tel quel dans le fichier (ne pas y toucher,
+     ne pas le vider) — l'app continue d'afficher les dernières valeurs connues, c'est voulu.
+     **Reprendre la collecte dès que Romain confirme qu'il porte sa montre en continu**
+     (attendu fin septembre / courant octobre) : à ce moment, recalculer `fc_repos` sur ses
+     2-3 premières semaines de port continu (vie normale, hors vacances) et reprendre l'alimentation
+     de `fc_repos_serie` jour par jour.
+   - À partir de la reprise du port continu : récupérer aussi le **sommeil** (`/app/sleep/<date>`)
+     et la **VFC** (`/app/hrv-status`), et les ajouter dans `window.GARMIN` (`sommeil`, `vfc`).
+     Ces deux champs restent à `null` tant qu'ils n'existent pas.
    - Si Chrome n'est pas disponible : **ne pas bloquer**, conserver les valeurs Garmin
      précédentes et passer `MAJ.garmin` à `false`.
 
@@ -128,15 +135,13 @@ Ne jamais commiter autre chose que `data-strava.js` sans que ce soit expliciteme
   sont dans les archétypes (`tapis`) — 14,5 km/h pour le VO2max, 13,1 pour les 1000 m,
   12,6 pour les 2000 m, 6-8 % d'inclinaison pour les côtes. Les tapis étant souvent mal calibrés,
   croiser avec la FC plutôt que de se fier aveuglément à la vitesse affichée.
-- **FC de repos — la référence de 49 bpm n'est PAS fiable** : elle vient de fin août, pendant les vacances de
-  Romain (relâché, sans le stress ni la charge d'entraînement du quotidien). Depuis la rentrée, ses valeurs
-  tournent plutôt entre 54 et 61 bpm — c'est probablement ça sa vraie zone normale en vie active, pas une dérive.
-  **Ne plus déclencher d'alerte automatique sur un simple écart par rapport à 49.** Continuer à enregistrer
-  `fc_repos_serie` jour par jour (utile pour la tendance), mais ne signaler explicitement que :
-  (a) une valeur qui dépasse tout ce qui a été observé depuis la rentrée (>62-63 bpm), ou
-  (b) une hausse brutale et soutenue sur 3+ jours consécutifs par rapport aux 7 derniers jours glissants.
-  Romain reprend le port continu de la montre dans quelques semaines : à ce moment-là, redéfinir `fc_repos`
-  sur la moyenne des 2-3 premières semaines de port continu (vie normale, hors vacances) plutôt que sur 49,
-  et réactiver un vrai seuil d'alerte (+7 bpm) une fois cette nouvelle référence en place.
+- **FC de repos — suivi mis en pause le 9 septembre 2026, à la demande de Romain.** Ne plus consulter
+  Garmin pour cette donnée, ne plus la signaler dans le compte-rendu, positif ou négatif. La référence de
+  49 bpm (fin août, vacances) n'était de toute façon pas fiable comme ligne de base — inutile de continuer
+  à commenter des écarts par rapport à un chiffre qu'on sait déjà faux. **Reprendre uniquement quand Romain
+  confirme qu'il porte sa montre en continu** (attendu fin septembre / courant octobre) : à ce moment,
+  redéfinir `fc_repos` sur la moyenne des 2-3 premières semaines de port continu (vie normale, hors
+  vacances), reprendre l'alimentation de `fc_repos_serie`, et réactiver un vrai seuil d'alerte (+7 bpm
+  au-dessus de cette nouvelle référence).
 - **Allure des footings** : le problème n°1 de Romain est de courir ses sorties faciles trop vite
   (5:26/km au lieu de 6:00-6:30). Si l'allure moyenne hebdomadaire ne descend pas, le dire.
