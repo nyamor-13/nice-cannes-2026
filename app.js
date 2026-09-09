@@ -38,7 +38,7 @@ const TITLES=Object.fromEntries(NAV.map(n=>[n.p,n.l]));
 /* ---------- ÉTAT ---------- */
 const KEY="mnc2026-v3";
 let ST=JSON.parse(localStorage.getItem(KEY)||"{}");
-const save=()=>localStorage.setItem(KEY,JSON.stringify(ST));
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(ST));window.CloudSync?.push(ST);};
 const sid=(w,i)=>`w${w}s${i}`;
 const g=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -834,7 +834,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     applyFilter();
   });
   g("rst").onclick=()=>{if(confirm("Effacer toutes tes saisies (cases cochées, formes, ressentis) ?")){
-    ST={}; localStorage.removeItem(KEY); location.reload();
+    ST={}; localStorage.removeItem(KEY); window.CloudSync?.push({}); location.reload();
   }};
 });
 
@@ -862,21 +862,33 @@ document.addEventListener("DOMContentLoaded",()=>{
 /* ============================================================
    INITIALISATION
    ============================================================ */
-buildNav();
-tick(); setInterval(tick,1000);
-renderHome();
-renderFocusPage("focusCoursBody",curWeek,true);
-renderFocusPage("focusProchaineBody",curWeek+1,false);
-renderGauges();
-renderKpis();
-renderProjection();
-renderWithings();
-renderAnalyse();
-renderHisto();
-renderZones();
-renderWeeksList();
-document.querySelector(`.wk[data-w="${curWeek}"]`)?.classList.add("open");
-(()=>{const d=new Date(MAJ.date);
-  g("drawerMaj").innerHTML=`Synchro <b>${d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</b>`;
+function boot(){
+  buildNav();
+  tick(); setInterval(tick,1000);
+  renderHome();
+  renderFocusPage("focusCoursBody",curWeek,true);
+  renderFocusPage("focusProchaineBody",curWeek+1,false);
+  renderGauges();
+  renderKpis();
+  renderProjection();
+  renderWithings();
+  renderAnalyse();
+  renderHisto();
+  renderZones();
+  renderWeeksList();
+  document.querySelector(`.wk[data-w="${curWeek}"]`)?.classList.add("open");
+  (()=>{const d=new Date(MAJ.date);
+    g("drawerMaj").innerHTML=`Synchro <b>${d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</b>`;
+  })();
+  showPage(location.hash?location.hash.slice(1):"accueil");
+}
+(async function(){
+  // Avant le premier rendu : si une synchro cloud existe (saisie faite sur un
+  // autre appareil), elle prime sur le localStorage local. Ne bloque jamais
+  // longtemps — CloudSync.pull() a son propre timeout interne.
+  if(window.CloudSync){
+    const remote=await window.CloudSync.pull();
+    if(remote){ ST=remote; localStorage.setItem(KEY,JSON.stringify(ST)); }
+  }
+  boot();
 })();
-showPage(location.hash?location.hash.slice(1):"accueil");
