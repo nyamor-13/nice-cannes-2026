@@ -20,7 +20,17 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    Pour les nouvelles sorties de course, récupérer aussi `get_activity_performance`
    afin d'avoir la FC moyenne (utilisée pour l'indice d'efficience).
 
-2. **Recalculer les agrégats hebdomadaires** (semaines du lundi au dimanche) :
+2. **Recalculer `window.ACTIVITES`** (liste des activités individuelles réelles, pas seulement
+   l'agrégat hebdo) — c'est ce qui permet d'afficher "Ce que tu as réellement fait" sur les pages
+   Semaine en cours/prochaine et Plan complet, séance par séance, à côté du plan prévu.
+   - Une entrée par activité Strava des 21 derniers jours : `{date, type, nom, duree_min}`
+     + `km`/`allure` pour les courses, `m` pour la natation (jamais d'allure en min/km pour la nage,
+     ça n'a pas de sens), `fc` si disponible.
+   - `type` ∈ `"run"`, `"strength"`, `"swim"` (mêmes clés que `ICO` dans `app.js`).
+   - Garder une fenêtre glissante de 21 jours (comme la requête Strava) pour ne pas faire grossir
+     le fichier indéfiniment — pas besoin d'historique complet ici, seulement le récent.
+
+3. **Recalculer les agrégats hebdomadaires** (semaines du lundi au dimanche) :
    - `km`, `h`, `dplus`, `sorties`, `natations`, `renfo`
    - `longest` : plus longue sortie de la semaine
    - `allure` / `allure_min` : temps total ÷ distance totale
@@ -28,7 +38,7 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - `eff` : **indice d'efficience** = `(km × 1000) / (fc × minutes)` — mètres par battement.
      C'est le KPI de progression le plus important : il doit monter.
 
-3. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
+4. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
    - **FC repos : EN PAUSE jusqu'à fin septembre 2026** (demande explicite de Romain le 9 sept).
@@ -45,19 +55,21 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - Si Chrome n'est pas disponible : **ne pas bloquer**, conserver les valeurs Garmin
      précédentes et passer `MAJ.garmin` à `false`.
 
-4. **Réécrire `data-strava.js`** en respectant exactement ce format :
+5. **Réécrire `data-strava.js`** en respectant exactement ce format :
 
 ```js
-window.MAJ     = {"date":"<ISO local>","source":"Strava","garmin":true|false};
-window.GARMIN  = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ","v":49}],
-                  "predictions":{"5k":"","10k":"","semi":"","marathon":""},
-                  "sommeil":null,"vfc":null};
-window.HEBDO   = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
-                   "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0}];
-window.TOTAUX  = {"km":0,"h":0,"sorties":0,"natations":0};
+window.MAJ       = {"date":"<ISO local>","source":"Strava","garmin":true|false};
+window.ACTIVITES = [{"date":"AAAA-MM-JJ","type":"run","nom":"Course à pied le matin",
+                     "duree_min":49.1,"km":9.56,"allure":"5:08"}];
+window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ","v":49}],
+                    "predictions":{"5k":"","10k":"","semi":"","marathon":""},
+                    "sommeil":null,"vfc":null};
+window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
+                     "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0}];
+window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 ```
 
-5. **Vérifier** que le fichier est du JavaScript valide avant de le laisser en place :
+6. **Vérifier** que le fichier est du JavaScript valide avant de le laisser en place :
    ```
    /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc \
      <(printf 'var window={};\n'; cat data-strava.js; printf '\n"ok"\n')

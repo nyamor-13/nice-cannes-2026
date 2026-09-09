@@ -280,6 +280,39 @@ function renderHomeSynthese(wCur,okCur,pcCur){
 /* ============================================================
    RENDU — FOCUS (semaine en cours / prochaine)
    ============================================================ */
+function weekActivities(w){
+  if(!window.ACTIVITES) return [];
+  const start=new Date(w.du+"T00:00:00");
+  const end=new Date(start.getTime()+7*864e5);
+  return ACTIVITES.filter(a=>{
+    const d=new Date(a.date+"T00:00:00");
+    return d>=start && d<end;
+  }).sort((a,b)=>a.date<b.date?-1:1);
+}
+function renderRealActivities(w){
+  const acts=weekActivities(w);
+  if(!acts.length) return "";
+  const jourTxt=d=>{
+    const dt=new Date(d+"T00:00:00");
+    const s=dt.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"});
+    return s.charAt(0).toUpperCase()+s.slice(1);
+  };
+  return `
+    <h3 class="focus-h3">✅ Ce que tu as réellement fait</h3>
+    <div class="advice-list">
+      ${acts.map(a=>{
+        const detail=[
+          a.km?`${a.km} km`:null,
+          a.m?`${a.m} m`:null,
+          a.allure?`${a.allure}/km`:null,
+          a.duree_min?`${Math.round(a.duree_min)} min`:null,
+          a.fc?`FC moy. ${a.fc} bpm`:null
+        ].filter(Boolean).join(" · ");
+        return `<div class="advice-item"><span class="advice-ico">${ICO[a.type]||"•"}</span>
+          <div><b>${jourTxt(a.date)} — ${a.nom}</b><div class="bt">${detail}</div></div></div>`;
+      }).join("")}
+    </div>`;
+}
 function renderFocusPage(elId,weekNum,isCurrent){
   const el=g(elId); if(!el) return;
   const w=SEMAINES.find(x=>x.n===weekNum);
@@ -327,6 +360,8 @@ function renderFocusPage(elId,weekNum,isCurrent){
         <div class="advice-item"><span class="advice-ico">😴</span>
           <div><b>Le repos n'est pas une option</b><div class="bt">C'est pendant les jours sans séance que le corps encaisse la charge et progresse réellement.</div></div></div>
       </div>`:""}
+
+      ${renderRealActivities(w)}
 
       <h3 class="focus-h3">🗓️ Déroulé des séances</h3>
       ${renderBlocks(w)}
@@ -646,6 +681,7 @@ function renderWeeksList(){
      <div class="wb">
        <div class="wf">${w.focus}</div>
        ${w.prevu?`<div class="plan-prev"><b>Ce que le plan prévoyait</b>${w.prevu}</div>`:""}
+       ${w.past?"":renderRealActivities(w)}
        ${w.past?w.s.map((s,i)=>sess(w,s,i)).join(""):renderBlocks(w)}
        ${(!w.past&&w.planning)?renderPlanning(w):""}
        ${w.bilan?`<div class="bilan">${w.bilan}</div>`:""}
