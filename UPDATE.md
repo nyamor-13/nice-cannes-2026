@@ -29,6 +29,15 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - `type` ∈ `"run"`, `"strength"`, `"swim"` (mêmes clés que `ICO` dans `app.js`).
    - Garder une fenêtre glissante de 21 jours (comme la requête Strava) pour ne pas faire grossir
      le fichier indéfiniment — pas besoin d'historique complet ici, seulement le récent.
+   - **Pour chaque course (`type:"run"`), ajouter `"qual": true` si c'est une séance de qualité**
+     (VO2max, côtes, seuil, fractionné, ou un bloc à allure marathon — identifiable par l'archétype
+     `data-plan.js` correspondant à la séance du plan) — omettre le champ (ou `false`) pour un
+     footing normal. **Indispensable** : c'est ce qui permet à l'app de calculer une allure de
+     footing propre (`footingStats()` dans `app.js`) et de classer les sorties par zone
+     (`zoneRecentRuns()`) sans mélanger séances structurées et sorties faciles. Sans ce marquage,
+     une séance de côtes ou de VO2max fausse le diagnostic "allure de récup" et peut être
+     classée à tort dans une zone d'endurance alors que son allure moyenne ne représente rien de
+     réel (elle mélange échauffement, fractions et récupération).
    - **Pour les séances `type:"strength"`** : appeler `get_strength_workout_details` sur l'activité
      et ajouter un champ `exercices` : `[{nom, sets:["25 kg × 10", "× 15", ...]}]` (un objet par
      exercice, regroupant tous ses sets dans l'ordre — voir le format déjà utilisé dans le fichier).

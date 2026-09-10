@@ -311,9 +311,12 @@ function renderHomeSynthese(wCur,okCur,pcCur){
     ? `${tEff.pct>0?"en hausse":"en baisse"} de ${Math.abs(tEff.pct).toFixed(0)} % sur les 3 dernières semaines`
     : null;
 
-  const allureAlerte=last.allure_min<5.55
-    ? `<span style="color:var(--soleil)">⚠️ toujours trop rapide pour du Z1 — vise 6:00-6:30/km sur tes footings.</span>`
-    : `plus proche de la Z1 cible — continue.`;
+  const footingHome=footingStats(last.lundi);
+  const allureAlerte=!footingHome
+    ? `pas de footing pur cette semaine (que de la qualité) — rien à évaluer sur la récup.`
+    : footingHome.allure_min<5.9
+    ? `<span style="color:var(--soleil)">⚠️ tes footings (hors qualité) tournent à ${footingHome.allure}/km — toujours trop rapide, vise 6:00-6:30/km.</span>`
+    : `tes footings (hors qualité) tournent à ${footingHome.allure}/km, plus proche de la Z1 cible — continue.`;
 
   const pred=GARMIN.predictions.marathon.slice(0,4).replace(':','h');
   const objectifTxt=META.objectif.plan;
@@ -333,7 +336,7 @@ function renderHomeSynthese(wCur,okCur,pcCur){
     Semaine du ${rangeTxt} : <b>${last.km} km</b> en ${last.sorties} sorties, dont
     <b>${last.longest} km</b> en sortie longue à ${last.allure}/km${last.fc?` (FC moy. ${last.fc} bpm)`:""}.
     Efficience actuelle : <b>${last.eff??"—"}</b> m/battement${effTxt?`, ${effTxt}`:" (encore trop peu de semaines avec FC pour dégager une tendance)"}.
-    Allure moyenne toutes sorties : ${allureAlerte}
+    Allure de récup (footings) : ${allureAlerte}
     <br><br>
     Côté Garmin, la prédiction marathon actuelle est de <b>${pred}</b> pour un objectif fixé à <b>${objectifTxt}</b>.
     Cap de la semaine : <b>${wCur.titre}</b>.
@@ -564,8 +567,8 @@ function renderKpis(){
      t:trend(TB.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan."},
     {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff","#2dd4bf"),c:"#2dd4bf",
      t:trend(TB.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
-    {l:"Allure moyenne",v:H[H.length-1].allure,u:"min/km toutes sorties",b:bars("allure_min","#8b5cf6"),c:"#8b5cf6",
-     t:trend(TB.map(x=>x.allure_min),true),n:"⚠️ Doit RALENTIR : cible 6:00-6:30/km sur tes footings, pas 5:20."},
+    {l:"Allure moyenne",v:H[H.length-1].allure,u:"min/km toutes sorties (qualité incluse)",b:bars("allure_min","#8b5cf6"),c:"#8b5cf6",
+     t:trend(TB.map(x=>x.allure_min),true),n:"Mélange footings et séances de qualité — pas fiable pour juger l'allure de récup seule. Voir « Points d'amélioration » et la page Zones pour le diagnostic footings uniquement."},
     {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",b:bars("fc","#ef476f"),c:"#ef476f",
      t:trend(TB.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
     {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ef476f"),c:"#fb8500",
@@ -738,6 +741,24 @@ function lastAct(type){
   const acts=(window.ACTIVITES||[]).filter(a=>!type||a.type===type).sort((a,b)=>a.date<b.date?1:-1);
   return acts[0]||null;
 }
+// Allure moyenne des VRAIS footings d'une semaine (hors séances de qualité marquées `qual:true`
+// dans ACTIVITES) — jamais la moyenne "toutes sorties confondues" de HEBDO, qui mélange les
+// intervalles/côtes/seuil avec les sorties faciles et fausse complètement le diagnostic
+// "footings trop rapides" (une séance de VMA à 5:17/km de moyenne globale n'a rien à voir avec
+// un vrai footing à cette allure). Ne couvre que la fenêtre glissante de 21 j d'ACTIVITES.
+function footingStats(lundi){
+  const start=new Date(lundi+"T00:00:00"), end=new Date(start); end.setDate(end.getDate()+7);
+  const runs=(window.ACTIVITES||[]).filter(a=>{
+    if(a.type!=="run"||a.qual||!a.km||!a.duree_min) return false;
+    const d=new Date(a.date+"T00:00:00");
+    return d>=start&&d<end;
+  });
+  if(!runs.length) return null;
+  const totalMin=runs.reduce((s,r)=>s+r.duree_min,0), totalKm=runs.reduce((s,r)=>s+r.km,0);
+  if(!totalKm) return null;
+  const am=totalMin/totalKm, mm=Math.floor(am), ss=Math.round((am-mm)*60);
+  return {allure_min:am, allure:`${mm}:${String(ss).padStart(2,"0")}`, n:runs.length};
+}
 function jourLong(d){
   const dt=new Date(d+"T00:00:00");
   const s=dt.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
@@ -813,15 +834,18 @@ function renderAnalyse(){
     plus de concentration le jour J.</p></div>
 </div>`;
 
-  const allureBad=last.allure_min<5.9, allureOk=last.allure_min>=6.4;
+  const footing=footingStats(last.lundi);
+  const allureBad=footing&&footing.allure_min<5.9, allureOk=footing&&footing.allure_min>=6.4;
   const slDone=longestRecord>=30, slOk=longestRecord>=20, slStarting=longestRecord<15;
   const renfoRatio=renfoTot?Math.round(renfoDone/renfoTot*100):0;
   const chargeVerdict=last.tsb==null?null:last.tsb>5?"frais":last.tsb>-10?"charge normale":"fatigue à surveiller";
 
   g("ameliorations").innerHTML=`
-<div class="co ${allureBad?'co-w':allureOk?'co-v':'co-i'}"><b class="t">1. Allure de tes footings — ${allureBad?"toujours trop rapide":allureOk?"dans la bonne zone":"en progrès"}</b>
-  ${lastRun?`Dernière sortie (${jourLong(lastRun.date)}) : <b>${lastRun.allure}/km</b>. `:""}Moyenne de la semaine : <b>${last.allure}/km</b> toutes sorties confondues. Cible Z1 : 6:00-6:30/km.
-  <br><b>Verdict :</b> ${allureOk?"tu y es, continue comme ça — c'est exactement ce qui protège tes fins de sortie longue.":allureBad?"c'est encore ton allure marathon, pas ta zone de récup — le risque, c'est d'arriver cramé aux séances de qualité.":"tu ralentis, c'est le bon sens — pousse encore un peu vers 6:00-6:30."}</div>
+<div class="co ${!footing?'co-p':allureBad?'co-w':allureOk?'co-v':'co-i'}"><b class="t">1. Allure de tes footings — ${!footing?"pas de footing pur cette semaine":allureBad?"toujours trop rapide":allureOk?"dans la bonne zone":"en progrès"}</b>
+  ${footing
+    ?`Moyenne de <b>${footing.n}</b> footing${footing.n>1?"s":""} cette semaine (séances de qualité exclues, elles ne comptent pas comme référence Z1) : <b>${footing.allure}/km</b>. Cible Z1 : 6:00-6:30/km.
+    <br><b>Verdict :</b> ${allureOk?"tu y es, continue comme ça — c'est exactement ce qui protège tes fins de sortie longue.":allureBad?"c'est encore ton allure marathon, pas ta zone de récup — le risque, c'est d'arriver cramé aux séances de qualité.":"tu ralentis, c'est le bon sens — pousse encore un peu vers 6:00-6:30."}`
+    :`Cette semaine n'a eu que des séances de qualité ou pas encore de course — rien à évaluer sur l'allure de récupération pour l'instant. La moyenne "toutes sorties" (${last.allure}/km) n'est pas utilisable ici, elle mélange qualité et footing.`}</div>
 <div class="co ${slDone?'co-v':slOk?'co-i':'co-w'}"><b class="t">2. Sortie longue — record actuel ${longestRecord} km</b>
   Objectif final : 42,2 km le jour J, avec un pic d'entraînement à 30 km en semaine 10.
   <br><b>Statut :</b> ${slDone?"pic atteint, la suite c'est l'affûtage — protège cet acquis, n'en rajoute pas.":slOk?"en bonne trajectoire, continue la progression sans brûler d'étape.":slStarting?"tout démarre juste, c'est normal à ce stade du bloc.":"c'est le facteur n°1, ne saute aucune sortie longue d'ici la semaine 10."}</div>
@@ -868,10 +892,13 @@ function zoneBounds(z){
   const [a,b]=z.allure.split("–").map(s=>allureToMin(s.trim()));
   return [Math.min(a,b),Math.max(a,b)];
 }
-// Classe chaque course récente (ACTIVITES) dans sa zone réelle, pour que la page Zones montre
-// où tu as vraiment couru dernièrement plutôt qu'une simple grille théorique.
+// Classe chaque FOOTING récent (ACTIVITES) dans sa zone réelle, pour que la page Zones montre
+// où tu as vraiment couru dernièrement plutôt qu'une simple grille théorique. Les séances de
+// qualité (qual:true — VO2max, côtes, seuil...) sont exclues : leur allure moyenne mélange
+// échauffement/fractions/récup et ne représente aucune zone unique, la classer serait trompeur
+// (ex. une séance de côtes à 6:13/km de moyenne globale n'est pas "une sortie en Z1").
 function zoneRecentRuns(){
-  const runs=(window.ACTIVITES||[]).filter(a=>a.type==="run"&&a.allure)
+  const runs=(window.ACTIVITES||[]).filter(a=>a.type==="run"&&a.allure&&!a.qual)
     .map(a=>({...a, allureMin:allureToMin(a.allure)}))
     .sort((a,b)=>a.date<b.date?1:-1);
   const byZone={};
@@ -892,7 +919,8 @@ function renderZones(){
    `bornes cardiaques calculées par <b>réserve cardiaque</b> — FC repos ${META.athlete.fc_repos} bpm, `+
    `FCmax ${META.athlete.fc_max} bpm, réserve de ${META.athlete.fc_max-META.athlete.fc_repos} bpm. `+
    `<b>Fie-toi à l'allure en priorité</b>, la FC dérive avec la chaleur et la fatigue. `+
-   `En dessous de chaque zone : tes sorties récentes qui y correspondent réellement.`;
+   `En dessous de chaque zone : tes footings récents qui y correspondent réellement `+
+   `(les séances de qualité — VO2max, côtes, seuil — sont exclues, leur allure moyenne mélange trop d'efforts différents pour être classée dans une seule zone).`;
   const byZone=zoneRecentRuns();
   g("zones").innerHTML=Object.entries(ZONES).map(([k,z])=>{
     const recents=byZone[k];
