@@ -284,12 +284,16 @@ function renderHomeSynthese(wCur,okCur,pcCur){
   const kmFait=Math.round(S.km_fait), kmPrevu=Math.round(S.km_prevu);
 
   const tEff=trend(H.map(x=>x.eff));
-  const tVol=trend(H.map(x=>x.km));
-  const tLong=trend(H.map(x=>x.longest));
+  const dernier=lastAct();
 
+  // Le badge croise deux signaux frais : la tendance d'efficience ET la forme (TSB) du modèle
+  // charge/fatigue — pas juste l'efficience seule, pour que le statut affiché change plus souvent
+  // et reflète mieux "comment tu es" au moment où tu regardes la page.
   let badge,badgeTxt;
-  if(tEff && tEff.pct>3){badge="var(--vert)";badgeTxt="🟢 En progression";}
+  if(last.tsb!=null && last.tsb<-12){badge="var(--rouge)";badgeTxt="🔴 Fatigue à surveiller";}
+  else if(tEff && tEff.pct>3){badge="var(--vert)";badgeTxt="🟢 En progression";}
   else if(tEff && tEff.pct<-8){badge="var(--corail)";badgeTxt="🟠 À surveiller";}
+  else if(last.tsb!=null && last.tsb>5){badge="var(--vert)";badgeTxt="🟢 Frais, de la marge";}
   else {badge="var(--azur-l)";badgeTxt="🔵 Stable";}
 
   const effTxt=tEff
@@ -303,15 +307,21 @@ function renderHomeSynthese(wCur,okCur,pcCur){
   const pred=GARMIN.predictions.marathon.slice(0,4).replace(':','h');
   const objectifTxt=META.objectif.plan;
 
+  const dernierTxt=dernier
+    ? `Ta dernière activité, ${jourLong(dernier.date).toLowerCase()} — <b>${dernier.nom}</b>${dernier.km?` : <b>${dernier.km} km</b> à ${dernier.allure}/km${dernier.fc?` (${dernier.fc} bpm)`:""}`:dernier.duree_min?` : ${Math.round(dernier.duree_min)} min`:""}.`
+    : "";
+
   el.innerHTML=`
   <div class="co co-i" style="border-color:${badge}">
     <b class="t" style="color:${badge}">${badgeTxt}</b>
+    ${dernierTxt}
+    <br><br>
     Semaine <b>${wCur.n}</b>/12 · <b>${daysToRace} jours</b> avant le marathon. <b>${okCur}/${wCur.s.length}</b> séances
     cochées cette semaine, <b>${pcPlan} %</b> du plan validé au total (<b>${kmFait}</b> km sur ${kmPrevu} prévus).
     <br><br>
-    Ta dernière semaine complète (${rangeTxt}) : <b>${last.km} km</b> en ${last.sorties} sorties, dont
+    Semaine du ${rangeTxt} : <b>${last.km} km</b> en ${last.sorties} sorties, dont
     <b>${last.longest} km</b> en sortie longue à ${last.allure}/km${last.fc?` (FC moy. ${last.fc} bpm)`:""}.
-    Ton efficience — le meilleur indicateur de progrès — est actuellement à <b>${last.eff??"—"}</b> m/battement${effTxt?`, ${effTxt}`:" (encore trop peu de semaines avec FC pour dégager une tendance)"}.
+    Efficience actuelle : <b>${last.eff??"—"}</b> m/battement${effTxt?`, ${effTxt}`:" (encore trop peu de semaines avec FC pour dégager une tendance)"}.
     Allure moyenne toutes sorties : ${allureAlerte}
     <br><br>
     Côté Garmin, la prédiction marathon actuelle est de <b>${pred}</b> pour un objectif fixé à <b>${objectifTxt}</b>.
@@ -687,11 +697,21 @@ function renderMateriel(){
 /* ============================================================
    RENDU — ANALYSE
    ============================================================ */
+function lastAct(type){
+  const acts=(window.ACTIVITES||[]).filter(a=>!type||a.type===type).sort((a,b)=>a.date<b.date?1:-1);
+  return acts[0]||null;
+}
+function jourLong(d){
+  const dt=new Date(d+"T00:00:00");
+  const s=dt.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
 function renderAnalyse(){
   const H=HEBDO, last=H[H.length-1];
   const effArr=H.filter(w=>w.eff!=null);
   const effFirst=effArr[0]?.eff, effLast=effArr[effArr.length-1]?.eff;
   const effPct=(effFirst!=null&&effLast!=null&&effArr.length>1)?Math.round((effLast-effFirst)/effFirst*100):null;
+  const lastRun=lastAct("run");
 
   const longestRecord=Math.max(...H.map(w=>w.longest));
   const pctMarathon=Math.round(longestRecord/42.195*100);
@@ -721,12 +741,16 @@ function renderAnalyse(){
     if(A&&QUAL_FAM.includes(A.fam)){ qualTot++; if(isDone(w,s,i)) qualDone++; }
   }));
 
+  const lastRunTxt=lastRun
+    ? `Ta dernière sortie (${jourLong(lastRun.date)}${lastRun.nom.match(/\(([^)]+)\)/)?", "+lastRun.nom.match(/\(([^)]+)\)/)[1]:""}) : <b>${lastRun.allure}/km</b>${lastRun.fc?` à <b>${lastRun.fc} bpm</b>`:""} sur ${lastRun.km} km.`
+    : "";
+
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil</b>
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b> — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
   ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
-  <br><br>Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
-  Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
+  <br><br>${lastRunTxt} Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
+  <br><br>Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
   (formule de Riegel, extrapolée depuis le semi — la distance la plus proche du marathon, donc la plus fiable) — Garmin prédit
   en réalité <b>${secToHM(predSec)}</b>. L'écart, <b>${gapMin} minutes</b>, chiffre ton déficit d'endurance spécifique : c'est
   exactement ce que le plan comble, semaine après semaine.</div>
@@ -734,14 +758,14 @@ function renderAnalyse(){
   <div class="card"><h3>🔋 Le carburant</h3>
     <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène, un marathon en coûte ~2 800.
     Avec ${longestRecord} km au compteur, tu as déjà testé ce mécanisme sur <b>${pctMarathon} %</b> de la distance de course.
-    <br><br><b>Ce que le plan y fait :</b> chaque sortie longue au-delà de 1h45 entraîne précisément cette bascule vers les graisses.</p></div>
+    <br><br><b>Ce que le plan y fait :</b> ${longestRecord<20?"les prochaines sorties longues vont commencer à pousser cette limite plus loin.":longestRecord<28?"chaque sortie longue au-delà de 1h45 entraîne précisément cette bascule vers les graisses — tu es en plein dedans.":"le pic de volume long a fait le plus gros du travail ; l'affûtage préserve cet acquis sans le remettre en jeu."}</p></div>
   <div class="card"><h3>🦵 Les fibres</h3>
     <p class="lead" style="margin:8px 0 0">À chaque foulée, tes quadriceps freinent la descente en contraction
     <b>excentrique</b> — le mode qui crée le plus de micro-lésions.
     <br><br><b>Ce que le plan y fait :</b> <b>${renfoDone}/${renfoTot}</b> séances de renfo déjà réalisées, dont le travail
     unilatéral (leg press une jambe, fentes bulgares) qui manquait avant le bloc.</p></div>
   <div class="card"><h3>❤️ Le cardio</h3>
-    <p class="lead" style="margin:8px 0 0">Ta dernière semaine complète : <b>${last.allure}/km</b>${last.fc?` à ${last.fc} bpm`:""}.
+    <p class="lead" style="margin:8px 0 0">${lastRunTxt||`Dernière semaine complète : <b>${last.allure}/km</b>${last.fc?` à ${last.fc} bpm`:""}.`}
     ${effPct!=null?`Ton efficience a évolué de <b>${effFirst} à ${effLast} m/battement</b> (${effPct>0?"+":""}${effPct} %)
     depuis que la donnée FC existe.`:"Pas encore assez de semaines avec FC pour une tendance fiable."}
     <br><br><b>Conséquence :</b> le plan sert surtout à faire remonter tes jambes au niveau de ton cœur.</p></div>
@@ -753,27 +777,28 @@ function renderAnalyse(){
 </div>`;
 
   const allureBad=last.allure_min<5.9, allureOk=last.allure_min>=6.4;
-  const slDone=longestRecord>=30, slOk=longestRecord>=20;
+  const slDone=longestRecord>=30, slOk=longestRecord>=20, slStarting=longestRecord<15;
   const renfoRatio=renfoTot?Math.round(renfoDone/renfoTot*100):0;
+  const chargeVerdict=last.tsb==null?null:last.tsb>5?"frais":last.tsb>-10?"charge normale":"fatigue à surveiller";
 
   g("ameliorations").innerHTML=`
 <div class="co ${allureBad?'co-w':allureOk?'co-v':'co-i'}"><b class="t">1. Allure de tes footings — ${allureBad?"toujours trop rapide":allureOk?"dans la bonne zone":"en progrès"}</b>
-  Dernière semaine : <b>${last.allure}/km</b> en moyenne toutes sorties confondues. Cible Z1 : 6:00-6:30/km.
-  <br><b>Verdict :</b> ${allureOk?"tu y es, continue comme ça.":allureBad?"c'est encore ton allure marathon, pas ta zone de récup.":"tu ralentis, c'est le bon sens — pousse encore un peu."}</div>
+  ${lastRun?`Dernière sortie (${jourLong(lastRun.date)}) : <b>${lastRun.allure}/km</b>. `:""}Moyenne de la semaine : <b>${last.allure}/km</b> toutes sorties confondues. Cible Z1 : 6:00-6:30/km.
+  <br><b>Verdict :</b> ${allureOk?"tu y es, continue comme ça — c'est exactement ce qui protège tes fins de sortie longue.":allureBad?"c'est encore ton allure marathon, pas ta zone de récup — le risque, c'est d'arriver cramé aux séances de qualité.":"tu ralentis, c'est le bon sens — pousse encore un peu vers 6:00-6:30."}</div>
 <div class="co ${slDone?'co-v':slOk?'co-i':'co-w'}"><b class="t">2. Sortie longue — record actuel ${longestRecord} km</b>
   Objectif final : 42,2 km le jour J, avec un pic d'entraînement à 30 km en semaine 10.
-  <br><b>Statut :</b> ${slDone?"pic atteint, la suite c'est l'affûtage.":slOk?"en bonne trajectoire, continue la progression.":"c'est le facteur n°1, ne saute aucune sortie longue."}</div>
+  <br><b>Statut :</b> ${slDone?"pic atteint, la suite c'est l'affûtage — protège cet acquis, n'en rajoute pas.":slOk?"en bonne trajectoire, continue la progression sans brûler d'étape.":slStarting?"tout démarre juste, c'est normal à ce stade du bloc.":"c'est le facteur n°1, ne saute aucune sortie longue d'ici la semaine 10."}</div>
 <div class="co ${seuilDone>=seuilAll.length&&seuilAll.length?'co-v':'co-i'}"><b class="t">3. Travail au seuil — ${seuilDone}/${seuilAll.length} séances faites</b>
   Le levier le plus rentable pour élever ton plafond aérobie.
-  <br><b>Statut :</b> ${seuilDone===0?"aucune encore, la première arrive en semaine 6-7.":seuilDone<seuilAll.length?"en cours, garde l'allure stable du 1ᵉʳ au dernier bloc.":"terminé, ton plafond aérobie a été sollicité tout le bloc."}</div>
+  <br><b>Statut :</b> ${seuilDone===0?"aucune encore, la première arrive en semaine 6-7 — patience.":seuilDone<seuilAll.length?"en cours, garde l'allure stable du 1ᵉʳ au dernier bloc de chaque séance.":"terminé, ton plafond aérobie a été sollicité tout le bloc."}</div>
 <div class="co ${renfoRatio>=70?'co-v':'co-i'}"><b class="t">4. Renforcement — ${renfoDone}/${renfoTot} séances faites</b>
   Le complément unilatéral qui manquait avant le bloc (leg press une jambe, fentes bulgares, mollets unipodaux).
-  <br><b>Statut :</b> ${renfoDone===0?"pas encore démarré sur le bloc.":`${renfoRatio} % du renfo prévu réalisé à ce stade.`}</div>
-<div class="co co-p"><b class="t">5. FC de repos — pas encore de vraie ligne de base</b>
-  Valeurs récentes entre <b>${fcMin??"—"}</b> et <b>${fcMax??"—"} bpm</b> (dernière : ${fcLatest??"—"}). La référence de fin août (49 bpm)
-  vient de tes vacances et n'est pas fiable pour juger une hausse.
-  <br><b>Action :</b> port continu de la montre prévu dans quelques semaines pour obtenir sommeil, VFC et une vraie
-  référence en contexte de vie active.</div>`;
+  <br><b>Statut :</b> ${renfoDone===0?"pas encore démarré sur le bloc.":`${renfoRatio} % du renfo prévu réalisé à ce stade${renfoRatio>=90?" — quasiment à jour.":"."}`}</div>
+<div class="co co-p"><b class="t">5. Charge & forme — ${chargeVerdict||"pas encore assez de données"}</b>
+  ${last.ctl!=null?`Fitness (CTL) <b>${last.ctl}</b> · Fatigue (ATL) <b>${last.atl}</b> · Forme (TSB) <b>${last.tsb>0?"+":""}${last.tsb}</b>.`:""}
+  FC de repos : valeurs récentes entre <b>${fcMin??"—"}</b> et <b>${fcMax??"—"} bpm</b> (dernière : ${fcLatest??"—"}) — suivi mis en pause
+  jusqu'au port continu de la montre, la référence de vacances n'est pas fiable.
+  <br><b>Action :</b> ${chargeVerdict==="fatigue à surveiller"?"sois attentif au sommeil et aux sensations sur les prochains jours.":"rien à ajuster, continue le plan tel quel."}</div>`;
 }
 
 /* ============================================================
@@ -801,19 +826,58 @@ function renderHisto(){
 /* ============================================================
    RENDU — ZONES
    ============================================================ */
+function allureToMin(a){ const p=a.split(":").map(Number); return p[0]+p[1]/60; }
+function zoneBounds(z){
+  const [a,b]=z.allure.split("–").map(s=>allureToMin(s.trim()));
+  return [Math.min(a,b),Math.max(a,b)];
+}
+// Classe chaque course récente (ACTIVITES) dans sa zone réelle, pour que la page Zones montre
+// où tu as vraiment couru dernièrement plutôt qu'une simple grille théorique.
+function zoneRecentRuns(){
+  const runs=(window.ACTIVITES||[]).filter(a=>a.type==="run"&&a.allure)
+    .map(a=>({...a, allureMin:allureToMin(a.allure)}))
+    .sort((a,b)=>a.date<b.date?1:-1);
+  const byZone={};
+  Object.keys(ZONES).forEach(k=>byZone[k]=[]);
+  runs.forEach(r=>{
+    let best=null,bestD=Infinity;
+    Object.entries(ZONES).forEach(([k,z])=>{
+      const [lo,hi]=zoneBounds(z), mid=(lo+hi)/2;
+      const d=Math.abs(r.allureMin-mid);
+      if(r.allureMin>=lo-0.15&&r.allureMin<=hi+0.15&&d<bestD){best=k;bestD=d;}
+    });
+    if(best) byZone[best].push(r);
+  });
+  return byZone;
+}
 function renderZones(){
   g("zlead").innerHTML=`Allures dérivées de l'objectif ${META.objectif.plan} (${META.objectif.allure}/km), `+
    `bornes cardiaques calculées par <b>réserve cardiaque</b> — FC repos ${META.athlete.fc_repos} bpm, `+
    `FCmax ${META.athlete.fc_max} bpm, réserve de ${META.athlete.fc_max-META.athlete.fc_repos} bpm. `+
-   `<b>Fie-toi à l'allure en priorité</b>, la FC dérive avec la chaleur et la fatigue.`;
-  g("zones").innerHTML=Object.entries(ZONES).map(([k,z])=>`
+   `<b>Fie-toi à l'allure en priorité</b>, la FC dérive avec la chaleur et la fatigue. `+
+   `En dessous de chaque zone : tes sorties récentes qui y correspondent réellement.`;
+  const byZone=zoneRecentRuns();
+  g("zones").innerHTML=Object.entries(ZONES).map(([k,z])=>{
+    const recents=byZone[k];
+    const jourTxt=d=>{const dt=new Date(d+"T00:00:00");const s=dt.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});return s;};
+    let recentBlock;
+    if(!recents.length){
+      recentBlock=`<p class="zrecent zrecent-empty">Aucune sortie récente dans cette zone.</p>`;
+    }else{
+      const last=recents[0];
+      recentBlock=`<p class="zrecent"><b>${recents.length}</b> sortie${recents.length>1?"s":""} récente${recents.length>1?"s":""} ici —
+        la dernière le ${jourTxt(last.date)} à ${last.allure}/km${last.fc?` (${last.fc} bpm)`:""}.</p>`;
+    }
+    return `
    <div class="zone" style="--zc:${z.c}">
      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
        <span class="zbadge">${k}</span><h3 style="font-size:.9rem">${z.nom}</h3></div>
      <div class="zrow"><span>Allure</span><b>${z.allure} /km</b></div>
      <div class="zrow"><span>Vitesse tapis</span><b>${z.kmh} km/h</b></div>
      <div class="zrow"><span>FC</span><b>${z.fc} bpm</b></div>
-     <p>${z.desc}</p></div>`).join("");
+     <p>${z.desc}</p>
+     ${recentBlock}</div>`;
+  }).join("");
 }
 
 /* ============================================================
@@ -898,10 +962,24 @@ function sess(w,s,i){
         ${s.km&&!s.past?`<div class="sx" style="color:var(--tx3);margin-top:3px">📏 ≈ ${s.km} km</div>`:""}
         ${s.note?`<div class="snote">${pill(s.note)}</div>`:""}
         ${A?`<span class="expand" data-exp="1">${st.open?"− Masquer le détail":"+ Objectif, physiologie, adaptation, enchaînement"}</span>`:""}
+        ${analyseBlock(w,i)}
       </div>
     </div>
     ${A?detail(w,s,i,A,forme,st):""}
   </div>`;
+}
+// Analyse post-sync d'une séance réalisée : ce que je compare (allure/FC réelles vs cible) après
+// chaque synchro, publié directement ici plutôt que seulement dit dans le chat. Alimenté par
+// window.ANALYSES, régénéré à chaque sync — vide/absent tant qu'aucune analyse n'existe pour
+// cette séance précise (pas d'activité correspondante, ou séance pas encore de type "qualité").
+function analyseBlock(w,i){
+  const a=window.ANALYSES?.[sid(w.n,i)];
+  if(!a) return "";
+  const icoConclusion=a.conclusion==="conforme"?"✅":a.conclusion==="ajuste"?"🔧":"👀";
+  return `<details class="ex-detail an-detail">
+    <summary>Analyse de la séance (post-synchro)</summary>
+    <div class="an-body"><span class="an-tag">${icoConclusion} ${a.conclusion}</span>${a.texte}</div>
+  </details>`;
 }
 function detail(w,s,i,A,forme,st){
   return `<div class="sdet">

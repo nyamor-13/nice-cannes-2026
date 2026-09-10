@@ -105,7 +105,19 @@ window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"na
                      "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
+window.ANALYSES  = {"w4s0":{"date":"AAAA-MM-JJ","conclusion":"conforme","texte":"..."}};
 ```
+
+`window.ANALYSES` est l'objet qui publie l'analyse d'adaptation (étape suivante) **directement dans
+l'app**, sous un second bloc dépliable "Analyse de la séance" à côté du bloc "Objectif" existant sur
+la séance concernée — plus seulement dit dans le chat après la sync. Clé = `w<numéro semaine><index
+séance>` (même format que `sid()` dans `app.js`, ex. `w4s0` = semaine 4, séance d'index 0 dans
+`data-plan.js`). Il faut donc identifier à la main quelle séance du plan correspond à l'activité
+Strava analysée (par le type et la place dans la semaine, comme pour l'étape 8 ci-dessous).
+`conclusion` ∈ `"conforme"` (aucun ajustement), `"ajuste"` (une modif a été proposée et acceptée),
+`"surveiller"` (écart à surveiller sans agir tout de suite). Ne jamais écraser une entrée existante
+avec du texte inventé — si aucune activité ne correspond clairement à une séance de qualité cette
+semaine, ne rien ajouter plutôt que de deviner.
 
 7. **Vérifier** que le fichier est du JavaScript valide avant de le laisser en place :
    ```
@@ -135,6 +147,13 @@ FC/allure). Comparer : allure/vitesse réellement tenue vs cible, et FC atteinte
 - Une seule séance sous la cible ne justifie généralement pas un ajustement immédiat (peut être la
   première fois sur ce format, une fatigue ponctuelle, un tapis mal calibré...) — le signaler comme
   "à surveiller sur les 2-3 prochaines séances du même type" plutôt que de changer la cible tout de suite.
+
+**Publier aussi cette analyse dans `window.ANALYSES`** (voir format à l'étape 6) — ce n'est plus
+seulement un texte dans le chat, Romain veut le retrouver directement sous la séance concernée dans
+l'app, via un second bloc dépliable "Analyse de la séance" à côté du bloc "Objectif" existant. Rédige
+`texte` dans le même style que ce que tu dirais dans le chat (allure/FC réelles vs cible, conclusion
+en gras), 3-6 phrases. Une séance de qualité analysée = une entrée dans `window.ANALYSES`, sans
+exception, même quand la conclusion est "rien à changer".
 
 ## Déclenchement
 
