@@ -154,11 +154,14 @@ function barChart(data,opts){
     const projAttrs=d.proj?` fill-opacity="0.32" stroke="${col}" stroke-width="1" stroke-dasharray="3,2"`:"";
     return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"${projAttrs}/>`;
   }).join("");
+  // Précision des repères d'axe adaptée à l'écart réel entre eux, sinon un axe resserré (ex.
+  // efficience 1,19-1,31) affiche 3× le même nombre arrondi et devient illisible.
+  const decimals=axisRange<1?2:axisRange<10?1:0;
   const gridVals=[axisMin,(axisMin+axisMax)/2,axisMax];
   const grid=gridVals.map(v=>{
     const y=yFor(v);
     return `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--bd)" stroke-width="1"/>
-      <text x="${(padL-5).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--tx3)">${v.toFixed(v<10?1:0)}</text>`;
+      <text x="${(padL-5).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--tx3)">${v.toFixed(decimals)}</text>`;
   }).join("");
   const step=n>10?2:1;
   const xlabels=data.map((d,i)=>i%step?"":`<text x="${(padL+i*slot+slot/2).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="7.5" fill="${d.proj?'var(--tx3)':'var(--tx3)'}">${d.label}</text>`).join("");
@@ -548,33 +551,64 @@ function planWeeks(){
     if(real) return {...real, proj:false};
     const ws=weekStats(w);
     return {lundi:w.du, km:ws.km, longest:ws.longest, dplus:null, allure_min:null, fc:null,
-            eff:null, charge:null, ctl:null, atl:null, tsb:null, aero_min:null, anaero_min:null, proj:true};
+            eff:null, charge:null, ctl:null, atl:null, tsb:null, aero_min:null, anaero_min:null,
+            sl_allure_min:null, fc_footing:null, proj:true};
   });
 }
+// Phrase de progression sous un histogramme : toujours essayer de dire ce que la tendance signifie
+// concrètement pour l'objectif, plutôt qu'une description neutre — c'est ce qui donne envie de
+// revenir voir. `t` = résultat de trend(), `good` = phrase si la tendance va dans le bon sens,
+// `flat` = phrase par défaut/pas encore de tendance exploitable.
+function progressCaption(t, good, flat){
+  if(!t) return flat;
+  return t.good ? good(t) : flat;
+}
 function renderKpis(){
-  const H=HEBDO;
+  const H=HEBDO, last=H[H.length-1];
   // Base de calcul des tendances (%) : uniquement des semaines réelles et complètes. Si la
   // dernière semaine de HEBDO est encore en cours, on la retire du calcul et on compare sur
   // la précédente semaine complète — sinon une semaine à moitié faite fausse systématiquement
   // le pourcentage affiché (elle paraît toujours "en baisse").
-  const TB=isWeekComplete(H[H.length-1].lundi)?H:H.slice(0,-1);
+  const TB=isWeekComplete(last.lundi)?H:H.slice(0,-1);
   const PW=planWeeks();
   const bars=(field,color,colorHi)=>PW.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:colorHi&&weekHasCotes(x.lundi),proj:x.proj}));
+
+  const tVol=trend(TB.map(x=>x.km));
+  const slFirst=TB.find(w=>w.longest)?.longest, slNow=Math.max(...H.map(x=>x.longest));
+  const slGain=(slFirst!=null)?slNow-slFirst:null;
+  const tEff=trend(TB.map(x=>x.eff));
+  const tSlAllure=trend(TB.map(x=>x.sl_allure_min),true);
+  const tFcFooting=trend(TB.map(x=>x.fc_footing),true);
+  const tCharge=trend(TB.map(x=>x.charge));
+
   const kpis=[
     {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km","#22c3e6"),c:"#22c3e6",
-     t:trend(TB.map(x=>x.km)),n:"Le plan te fait monter jusqu'à ~65 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan."},
+     t:tVol,n:progressCaption(tVol,
+       t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — tu montes bien vers le pic de ~65 km en semaine 10.`,
+       "Le plan te fait monter jusqu'à ~65 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan.")},
     {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest","#ffb703"),c:"#ffb703",
-     t:trend(TB.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan."},
+     t:trend(TB.map(x=>x.longest)),
+     n: slGain>0.5
+       ? `+${slGain.toFixed(1)} km depuis le début du suivi — encore ${Math.max(0,30-slNow).toFixed(0)} km avant le pic de la semaine 10.`
+       : "Objectif : 30 km en semaine 10. C'est ton principal levier. En clair pointillé : semaines à venir, valeur prévue par le plan."},
     {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff","#2dd4bf"),c:"#2dd4bf",
-     t:trend(TB.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
-    {l:"Allure moyenne",v:H[H.length-1].allure,u:"min/km toutes sorties (qualité incluse)",b:bars("allure_min","#8b5cf6"),c:"#8b5cf6",
-     t:trend(TB.map(x=>x.allure_min),true),n:"Mélange footings et séances de qualité — pas fiable pour juger l'allure de récup seule. Voir « Points d'amélioration » et la page Zones pour le diagnostic footings uniquement."},
-    {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",b:bars("fc","#ef476f"),c:"#ef476f",
-     t:trend(TB.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
+     t:tEff,n:progressCaption(tEff,
+       t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — ton cœur travaille moins pour la même allure, exactement l'effet recherché.`,
+       "Distance parcourue par battement de cœur. En hausse = tu progresses.")},
+    {l:"Allure sorties longues",v:H.filter(x=>x.sl_allure).slice(-1)[0]?.sl_allure,u:"min/km sur ta sortie longue (hors qualité)",b:bars("sl_allure_min","#8b5cf6"),c:"#8b5cf6",
+     t:tSlAllure,n:progressCaption(tSlAllure,
+       t=>`Allure en progression de ${Math.abs(t.pct).toFixed(0)} % sur tes sorties longues — l'endurance spécifique avance, c'est exactement ce que le plan travaille.`,
+       "Allure tenue sur ta sortie longue de la semaine (séances de qualité exclues) — le signal le plus direct sur ton endurance spécifique, plus utile que la moyenne toutes sorties.")},
+    {l:"FC à l'effort facile",v:H.filter(x=>x.fc_footing).slice(-1)[0]?.fc_footing,u:"bpm sur tes footings (hors qualité)",b:bars("fc_footing","#ef476f"),c:"#ef476f",
+     t:tFcFooting,n:progressCaption(tFcFooting,
+       t=>`FC en baisse de ${Math.abs(t.pct).toFixed(0)} % à effort comparable — une vraie adaptation cardiaque, pas un effet mécanique de séances plus dures.`,
+       "FC sur les footings uniquement (séances de qualité exclues) — isolée de l'effet mécanique des entraînements qui se durcissent, qui ferait mécaniquement monter une FC moyenne toutes sorties.")},
     {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ef476f"),c:"#fb8500",
      t:trend(TB.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."},
     {l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge","#22c3e6"),c:"#22c3e6",
-     t:trend(TB.map(x=>x.charge)),n:"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
+     t:tCharge,n:(tCharge&&tCharge.pct>0&&last.tsb!=null&&last.tsb>-10)
+       ?`Charge en hausse de ${tCharge.pct.toFixed(0)} % et forme encore dans la zone normale — la montée en charge est bien tolérée.`
+       :"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
     {l:"Temps en zone haute",v:H[H.length-1].anaero_min,u:"min ≥163 bpm (seuil/VMA) cette semaine",b:bars("anaero_min","#7209b7"),c:"#7209b7",
      t:trend(TB.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."}
   ];

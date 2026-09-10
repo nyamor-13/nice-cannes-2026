@@ -243,7 +243,11 @@ window.HEBDO = [
   "charge": 113,
   "ctl": 22.3,
   "atl": 18.6,
-  "tsb": 3.7
+  "tsb": 3.7,
+  "sl_allure_min": 5.98,
+  "sl_allure": "5:59",
+  "fc_footing": 137.7,
+  "eff_footing": 1.214
  },
  {
   "lundi": "2026-08-24",
@@ -262,7 +266,11 @@ window.HEBDO = [
   "charge": 265,
   "ctl": 24.6,
   "atl": 27.8,
-  "tsb": -3.2
+  "tsb": -3.2,
+  "sl_allure_min": 5.617,
+  "sl_allure": "5:37",
+  "fc_footing": 140.5,
+  "eff_footing": 1.267
  },
  {
   "lundi": "2026-08-31",
@@ -281,7 +289,11 @@ window.HEBDO = [
   "charge": 280,
   "ctl": 27.1,
   "atl": 38.3,
-  "tsb": -11.2
+  "tsb": -11.2,
+  "sl_allure_min": 5.85,
+  "sl_allure": "5:51",
+  "fc_footing": 140.7,
+  "eff_footing": 1.299
  },
  {
   "lundi": "2026-09-07",

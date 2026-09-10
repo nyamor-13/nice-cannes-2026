@@ -80,6 +80,17 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      dans `aero_min` si `avg_hr < 163` (zones Z1-Z3, cf `data-plan.js` → `ZONES.Z3.fc`), sinon dans
      `anaero_min` (Z4-Z5). Ne pas chercher à reconstituer ces champs pour les semaines passées où on
      n'a pas les tours — les laisser absents plutôt que d'inventer une valeur.
+   - `sl_allure_min` / `sl_allure` : allure de la sortie longue de la semaine **uniquement**
+     (repérer dans `window.ACTIVITES` la course la plus longue de la semaine parmi celles qui ne
+     sont pas `qual:true`) — jamais la moyenne toutes-sorties, qui n'a pas de sens pour juger la
+     progression sur ce format précis (Romain l'a demandé le 10 sept, l'allure moyenne "toutes
+     sorties" étant jugée peu informative). Absent si aucune sortie longue cette semaine.
+   - `fc_footing` / `eff_footing` : FC moyenne et indice d'efficience calculés **uniquement sur les
+     footings** de la semaine (mêmes activités que `footingStats()` dans `app.js` — `type:"run"`,
+     `qual` absent ou `false`). Objectif : isoler l'adaptation cardiaque réelle de l'effet mécanique
+     "les séances de qualité se durcissent donc la FC moyenne monte", qui rendait l'ancien indicateur
+     "FC moyenne toutes sorties" trompeur. Absent si aucun footing cette semaine (semaine 100 %
+     qualité, ça arrive — voir semaine du 7 sept).
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
@@ -111,7 +122,8 @@ window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ
                     "sommeil":null,"vfc":null};
 window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
                      "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0,
-                     "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null}];
+                     "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null,
+                     "sl_allure_min":null,"sl_allure":null,"fc_footing":null,"eff_footing":null}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
 window.ANALYSES  = {"w4s0":{"date":"AAAA-MM-JJ","conclusion":"conforme","texte":"..."}};
