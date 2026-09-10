@@ -522,7 +522,11 @@ function renderKpis(){
     {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",b:bars("fc","#ef476f"),c:"#ef476f",
      t:trend(H.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
     {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ffb703"),c:"#fb8500",
-     t:trend(H.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."}
+     t:trend(H.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."},
+    {l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge","#22c3e6"),c:"#22c3e6",
+     t:trend(H.map(x=>x.charge)),n:"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
+    {l:"Temps en zone haute",v:H[H.length-1].anaero_min,u:"min ≥163 bpm (seuil/VMA) cette semaine",b:bars("anaero_min","#7209b7"),c:"#7209b7",
+     t:trend(H.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."}
   ];
   g("kpis").innerHTML=kpis.map(k=>{
     const t=k.t;
@@ -531,6 +535,30 @@ function renderKpis(){
       <div class="kv" style="color:${k.c}">${k.v??'—'}</div>
       <div class="ku">${k.u}</div>${badge}
       ${barChart(k.b,{color:k.c,colorHi:k.c==="#fb8500"?"#ef476f":null,height:100})}<div class="kn">${k.n}</div></div>`}).join("");
+  renderForme();
+}
+// Charge/Fatigue/Forme — modèle CTL/ATL/TSB (le même principe que TrainingPeaks), calculé
+// nous-mêmes à partir de l'effort relatif Strava (moyenne mobile 42 j pour la charge chronique,
+// 7 j pour la charge aiguë). Pas de chiffre "Condition physique" Strava/Garmin ici : ces
+// formules-là sont propriétaires et non exposées par les connecteurs, celle-ci est transparente
+// et cohérente avec le reste de l'app.
+function renderForme(){
+  const el=g("forme"); if(!el) return;
+  const last=HEBDO[HEBDO.length-1];
+  if(last.tsb==null){ el.innerHTML=""; return; }
+  const tCtl=trend(HEBDO.map(x=>x.ctl));
+  let verdict,cls;
+  if(last.tsb>5){ verdict="tu es frais — la charge actuelle est bien digérée, il y a de la marge pour absorber plus."; cls="co-v"; }
+  else if(last.tsb>-10){ verdict="zone d'entraînement normale pour un bloc de préparation — ni trop frais, ni cramé."; cls="co-i"; }
+  else { verdict="fatigue accumulée significative — surveille le sommeil et les sensations, c'est le moment où les blessures de surcharge arrivent."; cls="co-w"; }
+  el.innerHTML=`
+  <div class="co ${cls}"><b class="t">Forme actuelle (charge/fatigue)</b>
+    Fitness (CTL) <b>${last.ctl}</b>${tCtl?`, ${tCtl.pct>0?"en hausse":"en baisse"} de ${Math.abs(tCtl.pct).toFixed(0)} % sur 3 semaines`:""} ·
+    Fatigue (ATL) <b>${last.atl}</b> · Forme (TSB = CTL − ATL) <b>${last.tsb>0?"+":""}${last.tsb}</b>.
+    <br><br>${verdict}
+    <br><br><span style="color:var(--tx3);font-size:.8rem">Modèle qu'on maîtrise nous-mêmes (moyennes mobiles 42 j / 7 j sur l'effort relatif Strava), plutôt que
+    la "Condition physique" Strava/Garmin — formule propriétaire non exposée par les connecteurs et pas forcément cohérente avec le reste de l'app.</span>
+  </div>`;
 }
 function renderProjection(){
   const objSec=hToSec(META.objectif.plan), raceSec=hToSec(META.objectif.course);

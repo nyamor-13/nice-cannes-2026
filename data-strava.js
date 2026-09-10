@@ -25,7 +25,11 @@ window.HEBDO = [
   "allure_min": 5.799,
   "fc": null,
   "eff": null,
-  "nat_m": 7388
+  "nat_m": 7388,
+  "charge": 258,
+  "ctl": 5.7,
+  "atl": 24.1,
+  "tsb": -18.4
  },
  {
   "lundi": "2026-06-08",
@@ -40,7 +44,11 @@ window.HEBDO = [
   "allure_min": 5.868,
   "fc": null,
   "eff": null,
-  "nat_m": 4000
+  "nat_m": 4000,
+  "charge": 185,
+  "ctl": 8.8,
+  "atl": 22.8,
+  "tsb": -14.0
  },
  {
   "lundi": "2026-06-15",
@@ -55,7 +63,11 @@ window.HEBDO = [
   "allure_min": 5.583,
   "fc": null,
   "eff": null,
-  "nat_m": 4166
+  "nat_m": 4166,
+  "charge": 214,
+  "ctl": 12.2,
+  "atl": 29.2,
+  "tsb": -17.0
  },
  {
   "lundi": "2026-06-22",
@@ -70,7 +82,11 @@ window.HEBDO = [
   "allure_min": 5.618,
   "fc": null,
   "eff": null,
-  "nat_m": 3000
+  "nat_m": 3000,
+  "charge": 191,
+  "ctl": 14.5,
+  "atl": 25.3,
+  "tsb": -10.8
  },
  {
   "lundi": "2026-06-29",
@@ -85,7 +101,11 @@ window.HEBDO = [
   "allure_min": 5.626,
   "fc": null,
   "eff": null,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 194,
+  "ctl": 16.5,
+  "atl": 26.9,
+  "tsb": -10.4
  },
  {
   "lundi": "2026-07-06",
@@ -100,7 +120,11 @@ window.HEBDO = [
   "allure_min": 5.641,
   "fc": null,
   "eff": null,
-  "nat_m": 1850
+  "nat_m": 1850,
+  "charge": 197,
+  "ctl": 18.2,
+  "atl": 25.3,
+  "tsb": -7.0
  },
  {
   "lundi": "2026-07-13",
@@ -115,7 +139,11 @@ window.HEBDO = [
   "allure_min": 5.708,
   "fc": null,
   "eff": null,
-  "nat_m": 1775
+  "nat_m": 1775,
+  "charge": 315,
+  "ctl": 22.4,
+  "atl": 37.9,
+  "tsb": -15.5
  },
  {
   "lundi": "2026-07-20",
@@ -130,7 +158,11 @@ window.HEBDO = [
   "allure_min": 5.527,
   "fc": null,
   "eff": null,
-  "nat_m": 2125
+  "nat_m": 2125,
+  "charge": 164,
+  "ctl": 22.6,
+  "atl": 29.9,
+  "tsb": -7.3
  },
  {
   "lundi": "2026-07-27",
@@ -145,7 +177,11 @@ window.HEBDO = [
   "allure_min": 5.82,
   "fc": null,
   "eff": null,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 132,
+  "ctl": 21.9,
+  "atl": 21.1,
+  "tsb": 0.8
  },
  {
   "lundi": "2026-08-03",
@@ -160,7 +196,11 @@ window.HEBDO = [
   "allure_min": 5.773,
   "fc": null,
   "eff": null,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 232,
+  "ctl": 23.8,
+  "atl": 31.4,
+  "tsb": -7.6
  },
  {
   "lundi": "2026-08-10",
@@ -175,7 +215,11 @@ window.HEBDO = [
   "allure_min": 6.07,
   "fc": null,
   "eff": null,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 153,
+  "ctl": 23.4,
+  "atl": 24.0,
+  "tsb": -0.6
  },
  {
   "lundi": "2026-08-17",
@@ -190,7 +234,11 @@ window.HEBDO = [
   "allure_min": 5.98,
   "fc": 137.7,
   "eff": 1.214,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 113,
+  "ctl": 22.3,
+  "atl": 18.6,
+  "tsb": 3.7
  },
  {
   "lundi": "2026-08-24",
@@ -205,7 +253,11 @@ window.HEBDO = [
   "allure_min": 5.617,
   "fc": 140.5,
   "eff": 1.267,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 265,
+  "ctl": 24.6,
+  "atl": 27.8,
+  "tsb": -3.2
  },
  {
   "lundi": "2026-08-31",
@@ -220,7 +272,11 @@ window.HEBDO = [
   "allure_min": 5.473,
   "fc": 140.7,
   "eff": 1.299,
-  "nat_m": 1675
+  "nat_m": 1675,
+  "charge": 280,
+  "ctl": 27.1,
+  "atl": 38.3,
+  "tsb": -11.2
  },
  {
   "lundi": "2026-09-07",
@@ -235,7 +291,13 @@ window.HEBDO = [
   "allure_min": 5.715,
   "fc": 143.7,
   "eff": 1.217,
-  "nat_m": 0
+  "nat_m": 0,
+  "charge": 109,
+  "ctl": 27.1,
+  "atl": 34.6,
+  "tsb": -7.5,
+  "aero_min": 100,
+  "anaero_min": 4
  }
 ];
 

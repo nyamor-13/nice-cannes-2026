@@ -53,6 +53,24 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - `fc` : moyenne pondérée par le temps, sur les sorties qui ont une FC
    - `eff` : **indice d'efficience** = `(km × 1000) / (fc × minutes)` — mètres par battement.
      C'est le KPI de progression le plus important : il doit monter.
+   - `charge` : somme du champ `relative_effort` de Strava (déjà renvoyé par `list_activities`,
+     aucun appel supplémentaire) sur toutes les activités de la semaine, tous types confondus.
+   - `ctl` / `atl` / `tsb` : **charge chronique / aiguë / forme**, façon TrainingPeaks — calculées
+     nous-mêmes (pas de "Condition physique" Strava/Garmin, ces formules sont propriétaires et
+     non exposées par les connecteurs). Méthode : moyenne mobile exponentielle jour par jour sur
+     `relative_effort` (0 les jours de repos) depuis le dernier point connu :
+     `ctl = ctl_prec + (charge_du_jour − ctl_prec) / 42` (fenêtre ~42 j)
+     `atl = atl_prec + (charge_du_jour − atl_prec) / 7` (fenêtre ~7 j)
+     `tsb = ctl − atl`.
+     Repartir des dernières valeurs `ctl`/`atl` connues (dernière semaine de `HEBDO`) et faire
+     avancer le calcul jour par jour jusqu'à aujourd'hui (pas seulement semaine par semaine) avant
+     d'enregistrer le point hebdomadaire — sinon la moyenne mobile perd sa précision sur les jours
+     de repos. Stocker le résultat du dernier jour de chaque semaine dans `HEBDO`.
+   - `aero_min` / `anaero_min` (uniquement si des tours avec FC sont disponibles pour au moins une
+     course de la semaine, via `get_activity_performance`) : pour chaque tour, additionner sa durée
+     dans `aero_min` si `avg_hr < 163` (zones Z1-Z3, cf `data-plan.js` → `ZONES.Z3.fc`), sinon dans
+     `anaero_min` (Z4-Z5). Ne pas chercher à reconstituer ces champs pour les semaines passées où on
+     n'a pas les tours — les laisser absents plutôt que d'inventer une valeur.
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
@@ -83,7 +101,8 @@ window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ
                     "predictions":{"5k":"","10k":"","semi":"","marathon":""},
                     "sommeil":null,"vfc":null};
 window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
-                     "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0}];
+                     "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0,
+                     "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
 ```
