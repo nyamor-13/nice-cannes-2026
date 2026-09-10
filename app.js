@@ -130,9 +130,17 @@ function barChart(data,opts){
   if(vals.length<2) return `<div class="kn" style="padding:20px 0">Pas encore assez de semaines pour un histogramme.</div>`;
   const W=300,H=opts.height||110,padL=30,padR=6,padT=8,padB=16;
   const plotW=W-padL-padR, plotH=H-padT-padB;
-  const mx=Math.max(...vals,0)*1.12||1;
+  const dataMin=Math.min(...vals), dataMax=Math.max(...vals), range=dataMax-dataMin;
+  // Échelle adaptative : si les valeurs varient peu par rapport à leur amplitude (ex. allure
+  // entre 5,4 et 6,0), démarrer l'axe à 0 écrase visuellement la tendance. On resserre alors
+  // l'échelle autour des valeurs réelles pour la rendre lisible. Les métriques à vraie
+  // amplitude (volume, dénivelé...) gardent un axe à 0, plus honnête sur leur échelle.
+  const zoom=opts.autoZoom!==false && dataMax>0 && (range/dataMax)<0.35;
+  const axisMin=zoom?Math.max(0,dataMin-(range>0?range*0.4:dataMax*0.05)):0;
+  const axisMax=zoom?dataMax+(range>0?range*0.4:dataMax*0.05):(dataMax*1.12||1);
+  const axisRange=(axisMax-axisMin)||1;
   const n=data.length, slot=plotW/n, bw=Math.min(22,slot*0.6);
-  const yFor=v=>padT+plotH-(v/mx)*plotH;
+  const yFor=v=>padT+plotH-((v-axisMin)/axisRange)*plotH;
   const bars=data.map((d,i)=>{
     const x=padL+i*slot+(slot-bw)/2;
     let y=d.value==null?padT+plotH:yFor(d.value);
@@ -141,16 +149,19 @@ function barChart(data,opts){
     // (le dénivelé d'une séance de côtes sur tapis reste à 0, faute de GPS).
     if(d.hi && h<3){ h=3; y=padT+plotH-3; }
     const col=d.hi?(opts.colorHi||"#ffb703"):(opts.color||"#22c3e6");
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"/>`;
+    // Semaine à venir : valeur projetée depuis le plan (pas encore réelle), affichée en clair
+    // avec un contour pointillé pour ne jamais la confondre avec une semaine réalisée.
+    const projAttrs=d.proj?` fill-opacity="0.32" stroke="${col}" stroke-width="1" stroke-dasharray="3,2"`:"";
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"${projAttrs}/>`;
   }).join("");
-  const gridVals=[0,mx/2,mx];
+  const gridVals=[axisMin,(axisMin+axisMax)/2,axisMax];
   const grid=gridVals.map(v=>{
     const y=yFor(v);
     return `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--bd)" stroke-width="1"/>
-      <text x="${(padL-5).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--tx3)">${Math.round(v)}</text>`;
+      <text x="${(padL-5).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--tx3)">${v.toFixed(v<10?1:0)}</text>`;
   }).join("");
   const step=n>10?2:1;
-  const xlabels=data.map((d,i)=>i%step?"":`<text x="${(padL+i*slot+slot/2).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="7.5" fill="var(--tx3)">${d.label}</text>`).join("");
+  const xlabels=data.map((d,i)=>i%step?"":`<text x="${(padL+i*slot+slot/2).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="7.5" fill="${d.proj?'var(--tx3)':'var(--tx3)'}">${d.label}</text>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible">${grid}${bars}${xlabels}</svg>`;
 }
 function trend(vals,inverse){
@@ -517,26 +528,52 @@ function wkLabel(lundi){
   const d=new Date(lundi+"T00:00:00");
   return d.toLocaleDateString("fr-FR",{day:"numeric",month:"numeric"});
 }
+// Une semaine est "complète" une fois son dimanche passé — sert à ne jamais comparer une
+// semaine en cours (forcément partielle) à des semaines entières dans les tendances.
+function isWeekComplete(lundi){
+  const end=new Date(lundi+"T00:00:00"); end.setDate(end.getDate()+7);
+  return NOW>=end;
+}
+// Les 12 semaines du plan, une par une : la vraie donnée HEBDO quand elle existe, sinon une
+// projection tirée du plan lui-même (km/sortie longue prévus) pour les semaines à venir —
+// coloriée différemment dans les histogrammes (voir barChart). On ne projette que ce qui est
+// réellement écrit dans le plan (km, sortie longue) ; le reste (FC, efficience, charge...)
+// dépend de l'exécution réelle et reste vide tant que la semaine n'a pas eu lieu.
+function planWeeks(){
+  return SEMAINES.map(w=>{
+    const real=HEBDO.find(h=>h.lundi===w.du);
+    if(real) return {...real, proj:false};
+    const ws=weekStats(w);
+    return {lundi:w.du, km:ws.km, longest:ws.longest, dplus:null, allure_min:null, fc:null,
+            eff:null, charge:null, ctl:null, atl:null, tsb:null, aero_min:null, anaero_min:null, proj:true};
+  });
+}
 function renderKpis(){
-  const H=HEBDO, last8=H.slice(-8);
-  const bars=(field,color,colorHi)=>last8.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:colorHi&&weekHasCotes(x.lundi)}));
+  const H=HEBDO;
+  // Base de calcul des tendances (%) : uniquement des semaines réelles et complètes. Si la
+  // dernière semaine de HEBDO est encore en cours, on la retire du calcul et on compare sur
+  // la précédente semaine complète — sinon une semaine à moitié faite fausse systématiquement
+  // le pourcentage affiché (elle paraît toujours "en baisse").
+  const TB=isWeekComplete(H[H.length-1].lundi)?H:H.slice(0,-1);
+  const PW=planWeeks();
+  const bars=(field,color,colorHi)=>PW.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:colorHi&&weekHasCotes(x.lundi),proj:x.proj}));
   const kpis=[
     {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km","#22c3e6"),c:"#22c3e6",
-     t:trend(H.map(x=>x.km)),n:"Le plan te fait monter jusqu'à ~65 km en semaine 10."},
+     t:trend(TB.map(x=>x.km)),n:"Le plan te fait monter jusqu'à ~65 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan."},
     {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest","#ffb703"),c:"#ffb703",
-     t:trend(H.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. C'est ton principal levier."},
+     t:trend(TB.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan."},
     {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff","#2dd4bf"),c:"#2dd4bf",
-     t:trend(H.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
+     t:trend(TB.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
     {l:"Allure moyenne",v:H[H.length-1].allure,u:"min/km toutes sorties",b:bars("allure_min","#8b5cf6"),c:"#8b5cf6",
-     t:trend(H.map(x=>x.allure_min),true),n:"⚠️ Doit RALENTIR : cible 6:00-6:30/km sur tes footings, pas 5:20."},
+     t:trend(TB.map(x=>x.allure_min),true),n:"⚠️ Doit RALENTIR : cible 6:00-6:30/km sur tes footings, pas 5:20."},
     {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",b:bars("fc","#ef476f"),c:"#ef476f",
-     t:trend(H.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
-    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ffb703"),c:"#fb8500",
-     t:trend(H.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."},
+     t:trend(TB.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
+    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ef476f"),c:"#fb8500",
+     t:trend(TB.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."},
     {l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge","#22c3e6"),c:"#22c3e6",
-     t:trend(H.map(x=>x.charge)),n:"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
+     t:trend(TB.map(x=>x.charge)),n:"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
     {l:"Temps en zone haute",v:H[H.length-1].anaero_min,u:"min ≥163 bpm (seuil/VMA) cette semaine",b:bars("anaero_min","#7209b7"),c:"#7209b7",
-     t:trend(H.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."}
+     t:trend(TB.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."}
   ];
   g("kpis").innerHTML=kpis.map(k=>{
     const t=k.t;
