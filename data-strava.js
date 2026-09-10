@@ -3,11 +3,11 @@
    Source : Strava (+ Garmin quand disponible)
    ============================================================ */
 
-window.MAJ = {"date": "2026-09-09T14:15:00", "source": "Strava", "garmin": true};
+window.MAJ = {"date": "2026-09-10T11:45:50", "source": "Strava", "garmin": true};
 
-window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0}];
+window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5}];
 
-window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:28", "10k": "45:50", "semi": "1:43:49", "marathon": "3:53:56"}, "sommeil": null, "vfc": null};
+window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:28", "10k": "45:49", "semi": "1:43:47", "marathon": "3:53:51"}, "sommeil": null, "vfc": null};
 
 window.HEBDO = [
  {
@@ -222,19 +222,19 @@ window.HEBDO = [
  },
  {
   "lundi": "2026-09-07",
-  "km": 9.7,
-  "h": 0.86,
+  "km": 18.3,
+  "h": 1.74,
   "dplus": 0,
-  "sorties": 1,
+  "sorties": 2,
   "natations": 0,
   "renfo": 1,
   "longest": 9.7,
-  "allure": "5:17",
-  "allure_min": 5.276,
-  "fc": 139.9,
-  "eff": 1.355,
+  "allure": "5:43",
+  "allure_min": 5.715,
+  "fc": 143.7,
+  "eff": 1.217,
   "nat_m": 0
  }
 ];
 
-window.TOTAUX = {"km": 582.3, "h": 55.4, "sorties": 58, "natations": 15};
+window.TOTAUX = {"km": 590.9, "h": 56.3, "sorties": 59, "natations": 15};
