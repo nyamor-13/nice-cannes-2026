@@ -120,16 +120,38 @@ function stats(){
 }
 const S=stats();
 
-/* ---------- SPARKLINES / TENDANCES ---------- */
-function spark(vals,color){
-  const v=vals.filter(x=>x!=null);if(v.length<2)return"";
-  const mn=Math.min(...v),mx=Math.max(...v),rg=mx-mn||1,W=100,H=30;
-  const pts=vals.map((x,i)=>x==null?null:[i/(vals.length-1)*W,H-((x-mn)/rg)*(H-5)-2.5]).filter(Boolean);
-  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  const last=pts[pts.length-1];
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-    <path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+/* ---------- TENDANCES ---------- */
+// Histogramme SVG avec axes lisibles (échelle + repères hebdo), pour remplacer les
+// sparklines quand on veut vraiment comparer les semaines entre elles, pas juste voir
+// une tendance globale.
+function barChart(data,opts){
+  opts=opts||{};
+  const vals=data.map(d=>d.value).filter(v=>v!=null);
+  if(vals.length<2) return `<div class="kn" style="padding:20px 0">Pas encore assez de semaines pour un histogramme.</div>`;
+  const W=300,H=opts.height||110,padL=30,padR=6,padT=8,padB=16;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const mx=Math.max(...vals,0)*1.12||1;
+  const n=data.length, slot=plotW/n, bw=Math.min(22,slot*0.6);
+  const yFor=v=>padT+plotH-(v/mx)*plotH;
+  const bars=data.map((d,i)=>{
+    const x=padL+i*slot+(slot-bw)/2;
+    let y=d.value==null?padT+plotH:yFor(d.value);
+    let h=d.value==null?0:(padT+plotH-y);
+    // Un marqueur "hi" (ex. semaine à côtes) doit rester visible même à valeur nulle
+    // (le dénivelé d'une séance de côtes sur tapis reste à 0, faute de GPS).
+    if(d.hi && h<3){ h=3; y=padT+plotH-3; }
+    const col=d.hi?(opts.colorHi||"#ffb703"):(opts.color||"#22c3e6");
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"/>`;
+  }).join("");
+  const gridVals=[0,mx/2,mx];
+  const grid=gridVals.map(v=>{
+    const y=yFor(v);
+    return `<line x1="${padL}" x2="${W-padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--bd)" stroke-width="1"/>
+      <text x="${(padL-5).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="var(--tx3)">${Math.round(v)}</text>`;
+  }).join("");
+  const step=n>10?2:1;
+  const xlabels=data.map((d,i)=>i%step?"":`<text x="${(padL+i*slot+slot/2).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="7.5" fill="var(--tx3)">${d.label}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible">${grid}${bars}${xlabels}</svg>`;
 }
 function trend(vals,inverse){
   const v=vals.filter(x=>x!=null);if(v.length<4)return null;
@@ -150,6 +172,21 @@ function secToHM(s){
   return `${h}h${String(m).padStart(2,"0")}`;
 }
 function riegel(t1sec,d1,d2){ return t1sec*Math.pow(d2/d1,1.06); }
+function hToSec(h){ const m=h.match(/(\d+)\s*h\s*(\d+)/); return m?(+m[1]*3600+ +m[2]*60):0; }
+// Potentiel physiologique par Riegel, croisé sur les 3 distances prédites par Garmin.
+// Le semi (21,1 km) est retenu comme référence principale : c'est la distance la plus
+// proche du marathon, donc l'extrapolation la moins risquée. Le 5 km et le 10 km sont
+// gardés comme repères de cohérence — un grand écart entre eux est en soi une information
+// (ça confirme le déficit d'endurance spécifique plutôt que la vitesse pure).
+function enginePotentiel(){
+  const G=GARMIN.predictions;
+  const estimates=[["5k",5],["10k",10],["semi",21.1]].map(([k,d])=>({
+    label:k, dist:d, sec:riegel(timeToSec(G[k]),d,42.195)
+  }));
+  const primary=estimates[estimates.length-1];
+  const secs=estimates.map(e=>e.sec);
+  return{estimates, primary, spreadMin:Math.round((Math.max(...secs)-Math.min(...secs))/60)};
+}
 
 /* ---------- ARCHÉTYPES : famille "qualité/force" pour stats & conseils ---------- */
 const QUAL_FAM=["Qualité","Force","Compétition"];
@@ -391,6 +428,53 @@ function refreshWeekViews(weekNum){
 /* ============================================================
    RENDU — PROGRESSION (jauges + KPI + projection)
    ============================================================ */
+function renderProgressSynthese(){
+  const el=g("progressSynthese"); if(!el) return;
+  const pcSe=Math.round(S.fait/S.tot*100), pcKm=Math.round(S.km_fait/S.km_prevu*100);
+  const longestRecord=Math.max(...HEBDO.map(w=>w.longest));
+
+  let slTxt;
+  if(longestRecord<15) slTxt="tes sorties longues démarrent tout juste — l'essentiel de la progression vers 30 km est encore devant toi.";
+  else if(longestRecord<22) slTxt=`tu commences à sentir le format long (<b>${longestRecord} km</b> en record), mais le vrai test arrive avec la montée vers 27-30 km.`;
+  else if(longestRecord<28) slTxt=`tu abordes les distances qui comptent vraiment (<b>${longestRecord} km</b> en record) — le pic à 30 km est en vue.`;
+  else slTxt=`le pic de volume long est atteint ou presque (<b>${longestRecord} km</b>) — la suite, c'est consolider puis affûter.`;
+
+  let qualTot=0,qualDone=0;
+  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{
+    const A=s.a?ARCHETYPES[s.a]:null;
+    if(A&&QUAL_FAM.includes(A.fam)){ qualTot++; if(isDone(w,s,i)) qualDone++; }
+  }));
+  let qualTxt;
+  if(qualDone===0) qualTxt="les séances de qualité (VMA, seuil, côtes) viennent tout juste de démarrer.";
+  else if(qualDone<qualTot*0.4) qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité faites — ça commence à élever ton plafond aérobie.`;
+  else if(qualDone<qualTot*0.8) qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité déjà dans les jambes — le travail de fond est bien engagé.`;
+  else qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité faites — l'essentiel du travail d'intensité est derrière toi.`;
+
+  let renfoTot=0,renfoDone=0;
+  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.k==="strength"){ renfoTot++; if(isDone(w,s,i)) renfoDone++; } }));
+
+  const objSec=hToSec(META.objectif.plan);
+  const predSec=timeToSec(GARMIN.predictions.marathon);
+  const gapMin=Math.round((predSec-objSec)/60);
+  const gapTxt=gapMin>0
+    ? `si le plan se déroule comme prévu, l'écart de <b>${gapMin} minutes</b> qui te sépare aujourd'hui de <b>${META.objectif.plan}</b> est exactement ce que la sortie longue, le seuil et le renfo sont censés combler d'ici le 8 novembre.`
+    : `tes données actuelles sont déjà sous l'objectif de <b>${META.objectif.plan}</b> — la fin du bloc sert surtout à sécuriser cette marge, pas à en gagner davantage.`;
+
+  const wNext=SEMAINES[curWeek], wNext2=SEMAINES[curWeek+1];
+  const nextTxt=[wNext,wNext2].filter(Boolean)
+    .map(w=>`<b>S${w.n} — ${w.titre}</b>`).join(" puis ");
+
+  el.innerHTML=`
+  <div class="co co-g">
+    Semaine <b>${curWeek}</b>/12 · <b>${pcSe} %</b> des séances du bloc réalisées, <b>${pcKm} %</b> du kilométrage prévu.
+    <br><br>
+    Côté sortie longue, ${slTxt} Côté intensité, ${qualTxt} Le renfo suit avec <b>${renfoDone}/${renfoTot}</b> séances faites —
+    c'est le complément unilatéral qui manquait avant le bloc (leg press une jambe, fentes bulgares).
+    <br><br>
+    ${nextTxt?`À venir : ${nextTxt}.<br><br>`:""}
+    Et question chrono : ${gapTxt}
+  </div>`;
+}
 function renderGauges(){
   const pc=Math.round(S.fait/S.tot*100), pk=Math.round(S.km_fait/S.km_prevu*100);
   const semRest=12-curWeek;
@@ -415,21 +499,30 @@ function renderGauges(){
         <div class="bar v" style="height:7px"><i style="width:${p}%"></i></div></div>`}).join("")}
   </div>`;
 }
+function weekHasCotes(lundi){
+  const w=SEMAINES.find(x=>x.du===lundi);
+  return !!(w && w.s.some(s=>s.a==="cotes"));
+}
+function wkLabel(lundi){
+  const d=new Date(lundi+"T00:00:00");
+  return d.toLocaleDateString("fr-FR",{day:"numeric",month:"numeric"});
+}
 function renderKpis(){
   const H=HEBDO, last8=H.slice(-8);
+  const bars=(field,color,colorHi)=>last8.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:colorHi&&weekHasCotes(x.lundi)}));
   const kpis=[
-    {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",s:last8.map(x=>x.km),c:"#22c3e6",
+    {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km","#22c3e6"),c:"#22c3e6",
      t:trend(H.map(x=>x.km)),n:"Le plan te fait monter jusqu'à ~65 km en semaine 10."},
-    {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",s:last8.map(x=>x.longest),c:"#ffb703",
+    {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest","#ffb703"),c:"#ffb703",
      t:trend(H.map(x=>x.longest)),n:"Objectif : 30 km en semaine 10. C'est ton principal levier."},
-    {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",s:H.map(x=>x.eff),c:"#2dd4bf",
+    {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff","#2dd4bf"),c:"#2dd4bf",
      t:trend(H.map(x=>x.eff)),n:"Distance parcourue par battement de cœur. En hausse = tu progresses."},
-    {l:"Allure moyenne",v:H[H.length-1].allure,u:"/km toutes sorties",s:last8.map(x=>-x.allure_min),c:"#8b5cf6",
-     t:trend(H.map(x=>x.allure_min),true),n:"⚠️ Doit RALENTIR : tes footings sont trop rapides."},
-    {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",s:H.map(x=>x.fc),c:"#ef476f",
+    {l:"Allure moyenne",v:H[H.length-1].allure,u:"min/km toutes sorties",b:bars("allure_min","#8b5cf6"),c:"#8b5cf6",
+     t:trend(H.map(x=>x.allure_min),true),n:"⚠️ Doit RALENTIR : cible 6:00-6:30/km sur tes footings, pas 5:20."},
+    {l:"FC moyenne",v:H.filter(x=>x.fc).slice(-1)[0]?.fc,u:"bpm en course",b:bars("fc","#ef476f"),c:"#ef476f",
      t:trend(H.map(x=>x.fc),true),n:"À allure égale, une FC qui baisse = adaptation cardiaque."},
-    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",s:last8.map(x=>x.dplus),c:"#fb8500",
-     t:trend(H.map(x=>x.dplus)),n:"Les séances de côtes vont le faire remonter dès la semaine 5."}
+    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ffb703"),c:"#fb8500",
+     t:trend(H.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."}
   ];
   g("kpis").innerHTML=kpis.map(k=>{
     const t=k.t;
@@ -437,35 +530,42 @@ function renderKpis(){
     return `<div class="kpi"><div class="kl">${k.l}</div>
       <div class="kv" style="color:${k.c}">${k.v??'—'}</div>
       <div class="ku">${k.u}</div>${badge}
-      ${spark(k.s,k.c)}<div class="kn">${k.n}</div></div>`}).join("");
+      ${barChart(k.b,{color:k.c,colorHi:k.c==="#fb8500"?"#ef476f":null,height:100})}<div class="kn">${k.n}</div></div>`}).join("");
 }
 function renderProjection(){
-  const pc=S.fait/S.tot;
-  const predNow=3*60+54.7, cible=3*60+45, potentiel=3*60+26;
-  const proj=predNow-(predNow-cible)*pc;
-  const fmt=m=>`${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,"0")}`;
+  const objSec=hToSec(META.objectif.plan), raceSec=hToSec(META.objectif.course);
+  const predSec=timeToSec(GARMIN.predictions.marathon);
+  const gapMin=Math.round((predSec-objSec)/60);
+  const eng=enginePotentiel();
   const volPrevu=Math.round(S.km_prevu);
+  const longestRecord=Math.max(...HEBDO.map(w=>w.longest));
+
+  const seuilAll=[]; SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.a==="seuil"||s.a==="seuil_2000") seuilAll.push({w,i}); }));
+  const seuilDone=seuilAll.filter(({w,i})=>isDone(w,w.s[i],i)).length;
+  const amAll=[]; SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.a==="sl_am") amAll.push({w,i}); }));
+  const amDone=amAll.filter(({w,i})=>isDone(w,w.s[i],i)).length;
+
   g("projection").innerHTML=`
   <div class="g g3" style="margin-bottom:15px">
+    <div class="kpi"><div class="kl">🎯 Objectif du bloc</div>
+      <div class="kv" style="color:var(--soleil)">${META.objectif.plan}</div>
+      <div class="ku">objectif d'entraînement</div>
+      <div class="kn">Objectif course (marge de sécurité) : ${META.objectif.course}.</div></div>
     <div class="kpi"><div class="kl">Prédiction Garmin actuelle</div>
-      <div class="kv" style="color:var(--tx2)">${GARMIN.predictions.marathon.slice(0,4).replace(':','h')}</div>
-      <div class="ku">au 5 septembre</div>
-      <div class="kn">Ce que tes données valent aujourd'hui, avant le bloc.</div></div>
-    <div class="kpi"><div class="kl">Projection si plan réalisé</div>
-      <div class="kv" style="color:var(--soleil)">${fmt(proj)}</div>
-      <div class="ku">à ${Math.round(pc*100)} % de réalisation</div>
-      <div class="kn">Converge vers 3h45 à mesure que tu coches les séances.</div></div>
-    <div class="kpi"><div class="kl">Potentiel du moteur</div>
-      <div class="kv" style="color:var(--vert)">${fmt(potentiel)}</div>
-      <div class="ku">selon ton 5 km prédit</div>
-      <div class="kn">Ce que vaudrait ton VO2max avec une endurance parfaite.</div></div>
+      <div class="kv" style="color:var(--tx2)">${secToHM(predSec)}</div>
+      <div class="ku">calculée sur tes perfs récentes</div>
+      <div class="kn">${gapMin>0?`Écart de <b>${gapMin} min</b> avec l'objectif — c'est précisément ce que le plan cible.`:`Déjà sous l'objectif — le plan sert maintenant à consolider cette marge.`}</div></div>
+    <div class="kpi"><div class="kl">Potentiel physiologique</div>
+      <div class="kv" style="color:var(--vert)">${secToHM(eng.primary.sec)}</div>
+      <div class="ku">extrapolé depuis ton semi</div>
+      <div class="kn">5 km → ${secToHM(eng.estimates[0].sec)} · 10 km → ${secToHM(eng.estimates[1].sec)}. Écart entre les 3 méthodes : ${eng.spreadMin} min — le semi est retenu car c'est la distance la plus proche du marathon, donc l'extrapolation la plus fiable.</div></div>
   </div>
   <div class="g g2">
     ${[
-      ["Sortie longue max","16,4 km","30 km","Le facteur n°1. Passer de 16 à 30 km transforme ta capacité à tenir le km 35."],
+      ["Sortie longue max",`${longestRecord} km`,"30 km","Le facteur n°1. Passer à 30 km transforme ta capacité à tenir le km 35."],
       ["Volume total du bloc",`${Math.round(S.km_fait)} km`,`${volPrevu} km`,"Densification capillaire et mitochondriale, meilleure utilisation des graisses."],
-      ["Temps à allure marathon","~20 min","~3 h cumulées","L'allure 5:20/km devient un automatisme au lieu d'un effort."],
-      ["Séances au seuil","0","4 séances","Relève le plafond aérobie sous lequel se situe ton allure de course."]
+      ["Sorties à allure marathon",`${amDone}/${amAll.length}`,`${amAll.length} au total`,"L'allure cible devient un automatisme au lieu d'un effort."],
+      ["Séances au seuil",`${seuilDone}/${seuilAll.length}`,`${seuilAll.length} au total`,"Relève le plafond aérobie sous lequel se situe ton allure de course."]
     ].map(([l,av,ap,d])=>`
     <div class="card cmp">
       <div class="cmp-l">${l}</div>
@@ -476,11 +576,6 @@ function renderProjection(){
       </div>
       <p class="cmp-d">${d}</p>
     </div>`).join("")}
-  </div>
-  <div class="co co-i"><b class="t">Comment lire cette projection</b>
-    Elle interpole entre la prédiction Garmin actuelle (3h54) et l'objectif (3h45), au prorata des séances validées.
-    C'est un <b>modèle simple et volontairement transparent</b>, pas un algorithme physiologique. Le vrai point de contrôle reste
-    <b>ton semi en solo du 11 octobre</b> (le 20 km de Paris affiche complet).
   </div>`;
 }
 
@@ -573,8 +668,8 @@ function renderAnalyse(){
   const longestRecord=Math.max(...H.map(w=>w.longest));
   const pctMarathon=Math.round(longestRecord/42.195*100);
 
-  const t5k=timeToSec(GARMIN.predictions["5k"]);
-  const potentielSec=riegel(t5k,5,42.195);
+  const eng=enginePotentiel();
+  const potentielSec=eng.primary.sec;
   const predSec=timeToSec(GARMIN.predictions.marathon);
   const gapMin=Math.round((predSec-potentielSec)/60);
 
@@ -603,9 +698,10 @@ function renderAnalyse(){
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b> — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
   ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
   <br><br>Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
-  Ton 5 km prédit (${GARMIN.predictions["5k"]}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
-  (formule de Riegel) — Garmin prédit en réalité <b>${secToHM(predSec)}</b>. L'écart, <b>${gapMin} minutes</b>, chiffre ton
-  déficit d'endurance spécifique : c'est exactement ce que le plan comble, semaine après semaine.</div>
+  Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
+  (formule de Riegel, extrapolée depuis le semi — la distance la plus proche du marathon, donc la plus fiable) — Garmin prédit
+  en réalité <b>${secToHM(predSec)}</b>. L'écart, <b>${gapMin} minutes</b>, chiffre ton déficit d'endurance spécifique : c'est
+  exactement ce que le plan comble, semaine après semaine.</div>
 <div class="g g2">
   <div class="card"><h3>🔋 Le carburant</h3>
     <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène, un marathon en coûte ~2 800.
@@ -900,6 +996,7 @@ function boot(){
   renderHome();
   renderFocusPage("focusCoursBody",curWeek,true);
   renderFocusPage("focusProchaineBody",curWeek+1,false);
+  renderProgressSynthese();
   renderGauges();
   renderKpis();
   renderProjection();
