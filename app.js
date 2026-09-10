@@ -36,9 +36,14 @@ const NAV=[
 const TITLES=Object.fromEntries(NAV.map(n=>[n.p,n.l]));
 
 /* ---------- ÉTAT ---------- */
-const KEY="mnc2026-v3";
+const KEY="mnc2026-v3", TSKEY=KEY+"__ts";
 let ST=JSON.parse(localStorage.getItem(KEY)||"{}");
-const save=()=>{localStorage.setItem(KEY,JSON.stringify(ST));window.CloudSync?.push(ST);};
+const save=()=>{
+  const ts=Date.now();
+  localStorage.setItem(KEY,JSON.stringify(ST));
+  localStorage.setItem(TSKEY,String(ts));
+  window.CloudSync?.push(ST,ts);
+};
 const sid=(w,i)=>`w${w}s${i}`;
 const g=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -808,7 +813,7 @@ document.addEventListener("click",e=>{
   const se=e.target.closest(".se");
   if(se){
     const w=SEMAINES.find(x=>x.n==+se.dataset.w), i=+se.dataset.i;
-    if(e.target.closest("[data-chk]")){ setS(w,i,{done:!getS(w,i).done}); location.reload(); return; }
+    if(e.target.closest("[data-chk]")){ setS(w,i,{done:!getS(w,i).done}); boot(); return; }
     if(e.target.closest("[data-exp]")){ setS(w,i,{open:!getS(w,i).open}); refreshWeekViews(w.n); return; }
     const fb=e.target.closest(".fbtn");
     if(fb){ setS(w,i,{forme:fb.dataset.f}); refreshWeekViews(w.n); return; }
@@ -834,7 +839,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     applyFilter();
   });
   g("rst").onclick=()=>{if(confirm("Effacer toutes tes saisies (cases cochées, formes, ressentis) ?")){
-    ST={}; localStorage.removeItem(KEY); window.CloudSync?.push({}); location.reload();
+    ST={}; save(); location.reload();
   }};
 });
 
@@ -864,7 +869,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    ============================================================ */
 function boot(){
   buildNav();
-  tick(); setInterval(tick,1000);
+  tick();
   renderHome();
   renderFocusPage("focusCoursBody",curWeek,true);
   renderFocusPage("focusProchaineBody",curWeek+1,false);
@@ -884,11 +889,20 @@ function boot(){
 }
 (async function(){
   // Avant le premier rendu : si une synchro cloud existe (saisie faite sur un
-  // autre appareil), elle prime sur le localStorage local. Ne bloque jamais
-  // longtemps — CloudSync.pull() a son propre timeout interne.
+  // autre appareil) ET qu'elle est plus récente que ce qu'on a déjà en local,
+  // elle prime sur le localStorage local. Sans cette comparaison de date,
+  // un cloud resté en retard (écriture précédente pas encore arrivée) pourrait
+  // écraser une saisie locale toute fraîche — ne bloque jamais longtemps,
+  // CloudSync.pull() a son propre timeout interne.
   if(window.CloudSync){
+    const localTs=Number(localStorage.getItem(TSKEY)||0);
     const remote=await window.CloudSync.pull();
-    if(remote){ ST=remote; localStorage.setItem(KEY,JSON.stringify(ST)); }
+    if(remote && remote.ts>localTs){
+      ST=remote.st;
+      localStorage.setItem(KEY,JSON.stringify(ST));
+      localStorage.setItem(TSKEY,String(remote.ts));
+    }
   }
   boot();
+  setInterval(tick,1000);
 })();

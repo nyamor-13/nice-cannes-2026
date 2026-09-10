@@ -53,9 +53,14 @@
   const doc = () => db.collection("app").doc("state");
 
   window.CloudSync = {
-    // Récupère l'état distant. Ne dépasse jamais TIMEOUT_MS au total.
-    // Renvoie null si le cloud est vide, indisponible, ou en erreur —
-    // dans tous ces cas l'appelant garde le localStorage local tel quel.
+    // Récupère l'état distant sous la forme {st, ts}. Ne dépasse jamais
+    // TIMEOUT_MS au total. Renvoie null si le cloud est vide, indisponible,
+    // ou en erreur — dans tous ces cas l'appelant garde le localStorage local
+    // tel quel. Le `ts` sert à l'appelant à décider si le distant est plus
+    // récent que le local avant de l'adopter (voir app.js) — sans cette
+    // comparaison, un rechargement de page peut arriver avant la fin de
+    // l'écriture cloud précédente et faire régresser l'état local avec une
+    // version plus vieille.
     async pull() {
       const ok = await init();
       if (!ok || !db) return null;
@@ -63,7 +68,7 @@
         const snap = await withTimeout(doc().get(), TIMEOUT_MS);
         if (snap && snap.exists) {
           const data = snap.data();
-          return data && data.st ? data.st : null;
+          return data && data.st ? { st: data.st, ts: data.ts || 0 } : null;
         }
         return null;
       } catch (e) {
@@ -71,11 +76,13 @@
       }
     },
     // Pousse l'état local vers le cloud, en tâche de fond, jamais bloquant.
-    push(state) {
+    // `ts` doit être le même horodatage que celui écrit en local (app.js),
+    // pour que la comparaison au prochain `pull()` soit cohérente.
+    push(state, ts) {
       init().then((ok) => {
         if (!ok || !db) return;
         doc()
-          .set({ st: state, ts: Date.now() })
+          .set({ st: state, ts: ts || Date.now() })
           .catch(() => {});
       });
     },
