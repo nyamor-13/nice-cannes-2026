@@ -29,8 +29,24 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - `type` ∈ `"run"`, `"strength"`, `"swim"` (mêmes clés que `ICO` dans `app.js`).
    - Garder une fenêtre glissante de 21 jours (comme la requête Strava) pour ne pas faire grossir
      le fichier indéfiniment — pas besoin d'historique complet ici, seulement le récent.
+   - **Pour les séances `type:"strength"`** : appeler `get_strength_workout_details` sur l'activité
+     et ajouter un champ `exercices` : `[{nom, sets:["25 kg × 10", "× 15", ...]}]` (un objet par
+     exercice, regroupant tous ses sets dans l'ordre — voir le format déjà utilisé dans le fichier).
+     Formatte chaque set en `"<poids> × <reps>"` si un poids existe, sinon juste `"× <reps>"`.
+     C'est ce qui alimente le "Détail des exercices" dépliable sous chaque séance de renfo dans l'app.
+     ⚠️ Romain a deux machines de leg press différentes (une inclinée/quadriceps à poids élevé
+     190-210 kg, une horizontale/ischios-fessiers à poids affiché faible 25-50 kg) — ne jamais
+     s'étonner d'un poids très différent d'une séance à l'autre sur ce même nom d'exercice.
 
-3. **Recalculer les agrégats hebdomadaires** (semaines du lundi au dimanche) :
+3. **Mettre à jour `window.MATERIEL`** (usure du matériel) :
+   - Appeler `get_gear` (filtré sur `gear_types:["Shoe"]`), repérer la paire nommée
+     « Marathon Nice - Cannes » (c'est celle que Romain utilise pour ce bloc), et mettre à jour :
+     `window.MATERIEL = {"chaussure": {"nom": "...", "marque": "...", "modele": "...", "km": <total_distance/1000>}}`.
+   - Pas d'alerte à générer nous-mêmes dans le compte-rendu pour ce chiffre (l'app calcule déjà un
+     verdict dynamique selon le kilométrage) — sauf si le total dépasse 500 km, où ça vaut le coup
+     de le signaler à Romain une fois, pour qu'il pense à surveiller l'amorti avant le marathon.
+
+4. **Recalculer les agrégats hebdomadaires** (semaines du lundi au dimanche) :
    - `km`, `h`, `dplus`, `sorties`, `natations`, `renfo`
    - `longest` : plus longue sortie de la semaine
    - `allure` / `allure_min` : temps total ÷ distance totale
@@ -38,7 +54,7 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - `eff` : **indice d'efficience** = `(km × 1000) / (fc × minutes)` — mètres par battement.
      C'est le KPI de progression le plus important : il doit monter.
 
-4. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
+5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
    - **FC repos : EN PAUSE jusqu'à fin septembre 2026** (demande explicite de Romain le 9 sept).
@@ -55,21 +71,24 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    - Si Chrome n'est pas disponible : **ne pas bloquer**, conserver les valeurs Garmin
      précédentes et passer `MAJ.garmin` à `false`.
 
-5. **Réécrire `data-strava.js`** en respectant exactement ce format :
+6. **Réécrire `data-strava.js`** en respectant exactement ce format :
 
 ```js
 window.MAJ       = {"date":"<ISO local>","source":"Strava","garmin":true|false};
 window.ACTIVITES = [{"date":"AAAA-MM-JJ","type":"run","nom":"Course à pied le matin",
-                     "duree_min":49.1,"km":9.56,"allure":"5:08"}];
+                     "duree_min":49.1,"km":9.56,"allure":"5:08"},
+                    {"date":"AAAA-MM-JJ","type":"strength","nom":"Renfo","duree_min":60.0,
+                     "exercices":[{"nom":"Leg Press","sets":["25 kg × 10","50 kg × 10"]}]}];
 window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ","v":49}],
                     "predictions":{"5k":"","10k":"","semi":"","marathon":""},
                     "sommeil":null,"vfc":null};
 window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
                      "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
+window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
 ```
 
-6. **Vérifier** que le fichier est du JavaScript valide avant de le laisser en place :
+7. **Vérifier** que le fichier est du JavaScript valide avant de le laisser en place :
    ```
    /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc \
      <(printf 'var window={};\n'; cat data-strava.js; printf '\n"ok"\n')

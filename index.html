@@ -185,6 +185,13 @@ svg{width:19px;height:19px;flex:0 0 auto}
 .advice-ico{font-size:1.15rem;flex:0 0 auto;line-height:1.3}
 .advice-item b{font-size:.83rem;display:block;margin-bottom:2px}
 .advice-item .bt{font-size:.81rem;color:var(--tx2);line-height:1.5}
+.ex-detail{margin-top:8px;font-size:.8rem}
+.ex-detail summary{cursor:pointer;color:var(--azur-l);font-weight:600;list-style:none}
+.ex-detail summary::-webkit-details-marker{display:none}
+.ex-detail summary::before{content:"+ ";}
+.ex-detail[open] summary::before{content:"− ";}
+.ex-list{margin:8px 0 0;padding-left:18px;color:var(--tx2);line-height:1.6}
+.ex-list li{margin-bottom:2px}
 
 /* TAGS */
 .tag{font-size:.62rem;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:5px;font-weight:800}
@@ -464,6 +471,10 @@ svg{width:19px;height:19px;flex:0 0 auto}
           <h2>⚖️ Poids &amp; composition corporelle</h2>
           <p class="lead" id="withingsLead"></p>
           <div id="withings"></div>
+        </section>
+        <section>
+          <h2>👟 Matériel</h2>
+          <div id="materiel"></div>
         </section>
       </div></section>
 

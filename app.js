@@ -313,8 +313,15 @@ function renderRealActivities(w){
           a.duree_min?`${Math.round(a.duree_min)} min`:null,
           a.fc?`FC moy. ${a.fc} bpm`:null
         ].filter(Boolean).join(" · ");
+        const exBlock=(a.exercices&&a.exercices.length)?`
+          <details class="ex-detail">
+            <summary>Détail des exercices (${a.exercices.length})</summary>
+            <ul class="ex-list">
+              ${a.exercices.map(ex=>`<li><b>${esc(ex.nom)}</b> — ${ex.sets.map(esc).join(" · ")}</li>`).join("")}
+            </ul>
+          </details>`:"";
         return `<div class="advice-item"><span class="advice-ico">${ICO[a.type]||"•"}</span>
-          <div><b>${jourTxt(a.date)} — ${a.nom}</b><div class="bt">${detail}</div></div></div>`;
+          <div><b>${jourTxt(a.date)} — ${a.nom}</b><div class="bt">${detail}</div>${exBlock}</div></div>`;
       }).join("")}
     </div>`;
 }
@@ -532,6 +539,26 @@ function renderWithings(){
     Poids stable, muscle en légère hausse, gras en légère baisse : la composition évolue dans le bon sens pendant
     la montée en charge. Rien à ajuster dans le plan pour l'instant — demande-moi un nouveau relevé quand tu veux un point.
   </div>`;
+}
+function renderMateriel(){
+  const el=g("materiel"); if(!el) return;
+  const m=window.MATERIEL?.chaussure;
+  if(!m){ el.innerHTML=`<div class="co co-i">Pas de chaussure suivie pour l'instant.</div>`; return; }
+  const REF=600; // durée de vie typique d'une chaussure de route, en km
+  const pc=Math.min(100,Math.round(m.km/REF*100));
+  let verdict,cls;
+  if(m.km<300){ verdict="Toute fraîche, aucune inquiétude à ce stade."; cls="co-v"; }
+  else if(m.km<500){ verdict="Bon état. À surveiller à l'approche du marathon."; cls="co-v"; }
+  else if(m.km<700){ verdict="S'approche de la limite d'usure typique (500-700 km) — garde un œil sur l'amorti."; cls="co-i"; }
+  else { verdict="Au-delà de la durée de vie habituelle d'une chaussure de route — risque de blessure accru, ne pas utiliser pour le marathon sans vérification."; cls="co-w"; }
+  el.innerHTML=`
+  <div class="kpi" style="max-width:360px">
+    <div class="kl">${esc(m.marque)} ${esc(m.modele)} — « ${esc(m.nom)} »</div>
+    <div class="kv" style="color:var(--tx)">${m.km} <span style="font-size:.9rem;color:var(--tx3)">km</span></div>
+    <div class="bar" style="margin-top:6px"><i style="width:${pc}%"></i></div>
+    <div class="kn">${pc}% d'une durée de vie type (${REF} km)</div>
+  </div>
+  <div class="co ${cls}" style="margin-top:12px">${verdict}</div>`;
 }
 
 /* ============================================================
@@ -877,6 +904,7 @@ function boot(){
   renderKpis();
   renderProjection();
   renderWithings();
+  renderMateriel();
   renderAnalyse();
   renderHisto();
   renderZones();
