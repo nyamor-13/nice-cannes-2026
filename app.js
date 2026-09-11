@@ -428,6 +428,10 @@ function renderFocusPage(elId,weekNum,isCurrent){
       <h3 class="focus-h3">🎯 Objectifs de la semaine</h3>
       <div class="co co-g">${w.focus}</div>
 
+      ${w.nutrition?`
+      <h3 class="focus-h3">🍽️ Nutrition</h3>
+      <div class="co co-p">${w.nutrition}</div>`:""}
+
       ${advice.length?`
       <h3 class="focus-h3">🧭 Articulation &amp; repos</h3>
       <div class="advice-list">
@@ -926,25 +930,44 @@ function zoneBounds(z){
   const [a,b]=z.allure.split("–").map(s=>allureToMin(s.trim()));
   return [Math.min(a,b),Math.max(a,b)];
 }
-// Classe chaque FOOTING récent (ACTIVITES) dans sa zone réelle, pour que la page Zones montre
-// où tu as vraiment couru dernièrement plutôt qu'une simple grille théorique. Les séances de
-// qualité (qual:true — VO2max, côtes, seuil...) sont exclues : leur allure moyenne mélange
-// échauffement/fractions/récup et ne représente aucune zone unique, la classer serait trompeur
-// (ex. une séance de côtes à 6:13/km de moyenne globale n'est pas "une sortie en Z1").
+// Classe chaque FOOTING récent (ACTIVITES) dans sa zone réelle par l'allure, pour Z1-Z3.
+// Les séances de qualité (qual:true — VO2max, seuil, fractionné...) ne peuvent pas être classées
+// par leur allure moyenne globale (mélange échauffement/fractions/récup, trompeur — ex. une séance
+// de côtes à 6:13/km de moyenne n'est pas "une sortie en Z1"). Pour Z4/Z5, on les intègre plutôt
+// via le champ `zone` posé manuellement à la sync (zone cible réelle de l'archétype de la séance),
+// pas par un calcul d'allure. Sans ce champ, Z4/Z5 resteraient structurellement toujours vides
+// (les seules séances qui les atteignent sont justement celles qu'on exclut du calcul par allure).
 function zoneRecentRuns(){
-  const runs=(window.ACTIVITES||[]).filter(a=>a.type==="run"&&a.allure&&!a.qual)
-    .map(a=>({...a, allureMin:allureToMin(a.allure)}))
-    .sort((a,b)=>a.date<b.date?1:-1);
+  const acts=(window.ACTIVITES||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
   const byZone={};
   Object.keys(ZONES).forEach(k=>byZone[k]=[]);
-  runs.forEach(r=>{
+  acts.filter(a=>a.type==="run"&&a.allure&&!a.qual).forEach(r=>{
+    const allureMin=allureToMin(r.allure);
     let best=null,bestD=Infinity;
     Object.entries(ZONES).forEach(([k,z])=>{
       const [lo,hi]=zoneBounds(z), mid=(lo+hi)/2;
-      const d=Math.abs(r.allureMin-mid);
-      if(r.allureMin>=lo-0.15&&r.allureMin<=hi+0.15&&d<bestD){best=k;bestD=d;}
+      const d=Math.abs(allureMin-mid);
+      if(allureMin>=lo-0.15&&allureMin<=hi+0.15&&d<bestD){best=k;bestD=d;}
     });
-    if(best) byZone[best].push(r);
+    if(best) byZone[best].push({...r, allureMin});
+  });
+  acts.filter(a=>a.qual&&a.zone&&byZone[a.zone]).forEach(r=>byZone[r.zone].push(r));
+  return byZone;
+}
+// Archétype → zone cible, pour lister les prochaines séances qui viseront chaque zone
+// (utile surtout pour Z4/Z5, qui ne montrent presque jamais de sortie récente autrement).
+const ARCH_ZONE={endurance:"Z1", sl:"Z2", sl_am:"Z3",
+  interval_1000:"Z4", seuil:"Z4", seuil_2000:"Z4",
+  vma_court:"Z5", vma_long:"Z5", vo2max:"Z5"};
+function upcomingByZone(){
+  const byZone={}; Object.keys(ZONES).forEach(k=>byZone[k]=[]);
+  SEMAINES.forEach(w=>{
+    if(w.past||w.n<curWeek) return;
+    w.s.forEach((s,i)=>{
+      const zone=s.a&&ARCH_ZONE[s.a];
+      if(!zone||isDone(w,s,i)) return;
+      byZone[zone].push({w,s,i});
+    });
   });
   return byZone;
 }
@@ -953,20 +976,28 @@ function renderZones(){
    `bornes cardiaques calculées par <b>réserve cardiaque</b> — FC repos ${META.athlete.fc_repos} bpm, `+
    `FCmax ${META.athlete.fc_max} bpm, réserve de ${META.athlete.fc_max-META.athlete.fc_repos} bpm. `+
    `<b>Fie-toi à l'allure en priorité</b>, la FC dérive avec la chaleur et la fatigue. `+
-   `En dessous de chaque zone : tes footings récents qui y correspondent réellement `+
-   `(les séances de qualité — VO2max, côtes, seuil — sont exclues, leur allure moyenne mélange trop d'efforts différents pour être classée dans une seule zone).`;
-  const byZone=zoneRecentRuns();
+   `En dessous de chaque zone : les footings récents qui y correspondent réellement (Z1-Z3), ou les séances de `+
+   `qualité récentes/à venir qui la ciblent (Z4-Z5) — leur allure moyenne globale n'a pas de sens, donc on ne les classe pas par calcul mais par ce qu'elles visent vraiment.`;
+  const byZone=zoneRecentRuns(), upcoming=upcomingByZone();
+  const jourTxt=d=>{const dt=new Date(d+"T00:00:00");return dt.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});};
   g("zones").innerHTML=Object.entries(ZONES).map(([k,z])=>{
     const recents=byZone[k];
-    const jourTxt=d=>{const dt=new Date(d+"T00:00:00");const s=dt.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});return s;};
     let recentBlock;
     if(!recents.length){
       recentBlock=`<p class="zrecent zrecent-empty">Aucune sortie récente dans cette zone.</p>`;
     }else{
       const last=recents[0];
+      const desc=last.qual
+        ? `${last.nom} (séance de qualité)`
+        : `à ${last.allure}/km${last.fc?` (${last.fc} bpm)`:""}`;
       recentBlock=`<p class="zrecent"><b>${recents.length}</b> sortie${recents.length>1?"s":""} récente${recents.length>1?"s":""} ici —
-        la dernière le ${jourTxt(last.date)} à ${last.allure}/km${last.fc?` (${last.fc} bpm)`:""}.</p>`;
+        la dernière le ${jourTxt(last.date)}, ${desc}.</p>`;
     }
+    const next=upcoming[k]||[];
+    const nextBlock=next.length?`<p class="zrecent znext"><b>À venir :</b> ${next.slice(0,3).map(({w,s})=>{
+      const A=s.a?ARCHETYPES[s.a]:null;
+      return `${A?A.ico:""} ${A?A.nom:s.t} <span class="zwk">S${w.n}</span>`;
+    }).join(" · ")}</p>`:"";
     return `
    <div class="zone" style="--zc:${z.c}">
      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
@@ -975,7 +1006,8 @@ function renderZones(){
      <div class="zrow"><span>Vitesse tapis</span><b>${z.kmh} km/h</b></div>
      <div class="zrow"><span>FC</span><b>${z.fc} bpm</b></div>
      <p>${z.desc}</p>
-     ${recentBlock}</div>`;
+     ${recentBlock}
+     ${nextBlock}</div>`;
   }).join("");
 }
 
@@ -999,6 +1031,7 @@ function renderWeeksList(){
      </div>
      <div class="wb">
        <div class="wf">${w.focus}</div>
+       ${w.nutrition?`<div class="plan-prev nutri"><b>🍽️ Nutrition</b>${w.nutrition}</div>`:""}
        ${w.prevu?`<div class="plan-prev"><b>Ce que le plan prévoyait</b>${w.prevu}</div>`:""}
        ${w.past?"":renderRealActivities(w)}
        ${w.past?w.s.map((s,i)=>sess(w,s,i)).join(""):renderBlocks(w)}
