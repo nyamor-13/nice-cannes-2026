@@ -3,9 +3,9 @@
    Source : Strava (+ Garmin quand disponible)
    ============================================================ */
 
-window.MAJ = {"date": "2026-09-10T11:45:50", "source": "Strava", "garmin": true};
+window.MAJ = {"date": "2026-09-11T13:17:57", "source": "Strava", "garmin": true};
 
-window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}];
+window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}, {"date": "2026-09-11", "type": "swim", "nom": "Natation le matin", "duree_min": 38.8, "m": 1800}];
 
 window.ANALYSES = {
  "w4s0": {"date": "2026-09-08", "conclusion": "conforme", "texte": "Séance faite à 79-95 % de la vitesse tapis cible (14,5 km/h), mais avec une FC montée à 97 % de FCmax (179 bpm) sur la dernière fraction — l'effort réel était conforme malgré une vitesse affichée en dessous de la cible. Le tapis semble mal calibré ou tu compenses par la foulée plutôt que la vitesse affichée. <b>Conclusion : aucun ajustement du plan</b> — l'archétype VO2max a été mis à jour pour prioriser la FC sur la vitesse affichée dans les prochaines séances de ce type."},
@@ -298,25 +298,25 @@ window.HEBDO = [
  {
   "lundi": "2026-09-07",
   "km": 18.3,
-  "h": 1.74,
+  "h": 2.39,
   "dplus": 0,
   "sorties": 2,
-  "natations": 0,
+  "natations": 1,
   "renfo": 1,
   "longest": 9.7,
   "allure": "5:43",
   "allure_min": 5.715,
   "fc": 143.7,
   "eff": 1.217,
-  "nat_m": 0,
-  "charge": 109,
+  "nat_m": 1800,
+  "charge": 134,
   "ctl": 27.1,
-  "atl": 34.6,
-  "tsb": -7.5,
+  "atl": 33.2,
+  "tsb": -6.1,
   "aero_min": 100,
   "anaero_min": 4,
   "incline_min": 21
  }
 ];
 
-window.TOTAUX = {"km": 590.9, "h": 56.3, "sorties": 59, "natations": 15};
+window.TOTAUX = {"km": 590.9, "h": 56.9, "sorties": 59, "natations": 16};
