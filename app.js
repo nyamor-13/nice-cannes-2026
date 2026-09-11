@@ -17,13 +17,14 @@ const ICONS={
   list:SVG(`<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.6"/>`),
   menu:SVG(`<path d="M4 7h16M4 12h16M4 17h16"/>`),
   trendup:SVG(`<path d="M4 17 10 11 14 15 20 7"/><path d="M20 7h-5.5M20 7v5.5"/>`),
+  arrowleft:SVG(`<path d="M19 12H5"/><path d="m11 18-6-6 6-6"/>`),
   x:SVG(`<path d="M6 6l12 12M18 6 6 18"/>`),
   refresh:SVG(`<path d="M4 12a8 8 0 0 1 14.5-4.7M20 12a8 8 0 0 1-14.5 4.7"/><path d="M18 3v4.5h-4.5M6 21v-4.5h4.5"/>`),
   chev:SVG(`<path d="m9 6 6 6-6 6"/>`),
 };
 
 /* ---------- PAGES ---------- */
-const PAGES=["accueil","semaine-cours","semaine-prochaine","progression","analyse","ameliorations","historique","zones","plan"];
+const PAGES=["accueil","semaine-cours","semaine-prochaine","progression","analyse","ameliorations","historique","zones","plan","detail"];
 const NAV=[
   {p:"accueil",l:"Accueil",i:"home"},
   {p:"semaine-cours",l:"Semaine en cours",i:"pin"},
@@ -165,7 +166,12 @@ function barChart(data,opts){
     // Semaine à venir : valeur projetée depuis le plan (pas encore réelle), affichée en clair
     // avec un contour pointillé pour ne jamais la confondre avec une semaine réalisée.
     const projAttrs=d.proj?` fill-opacity="0.32" stroke="${col}" stroke-width="1" stroke-dasharray="3,2"`:"";
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"${projAttrs}/>`;
+    const lundiAttr=d.lundi?` data-lundi="${d.lundi}"`:"";
+    // Zone de clic invisible sur toute la hauteur du graphique — une barre proche de 0 (ex. semaine
+    // sans dénivelé) est sinon quasi impossible à toucher précisément. Sert le drill-down par semaine
+    // sur la page de détail d'indicateur (clic sur une barre → chiffres de cette semaine).
+    const hitRect=d.lundi?`<rect x="${x.toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${plotH.toFixed(1)}" fill="transparent"${lundiAttr} class="bar-hit"/>`:"";
+    return `${hitRect}<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="${col}"${projAttrs}${lundiAttr}/>`;
   }).join("");
   // Précision des repères d'axe adaptée à l'écart réel entre eux, sinon un axe resserré (ex.
   // efficience 1,19-1,31) affiche 3× le même nombre arrondi et devient illisible.
@@ -502,10 +508,34 @@ function refreshWeekViews(weekNum){
 /* ============================================================
    RENDU — PROGRESSION (jauges + KPI + projection)
    ============================================================ */
+// Nombre de semaines déjà closes (n<curWeek) où la séance "pilier" (sortie longue ou course)
+// a été faite, en comptant à rebours depuis la dernière. Une semaine de coupure planifiée
+// (a:"off" avec fixe, ex. S5 mariage) ne casse pas la série — elle est prévue par le plan
+// lui-même, la pénaliser reviendrait à contredire la préparation. Sert uniquement de chiffre
+// de mise en avant de l'effort ici, ce n'est pas (encore) un mécanisme de streak persistant.
+function pilierStreak(){
+  let streak=0;
+  for(let n=curWeek-1;n>=1;n--){
+    const w=SEMAINES.find(x=>x.n===n); if(!w) break;
+    if(w.s.some(s=>s.a==="off"&&s.fixe)) continue;
+    const idx=w.s.findIndex(s=>s.a==="sl"||s.a==="sl_am"||s.a==="course");
+    if(idx===-1) break;
+    if(isDone(w,w.s[idx],idx)) streak++; else break;
+  }
+  return streak;
+}
+const GAIN_BY_TYPE={
+  build:"la charge continue de monter — c'est ce qui construit le plafond du 8 novembre",
+  peak:"c'est le pic de toute la préparation, le levier le plus lourd du plan",
+  taper:"on sécurise ce qui est acquis, sans plus rien risquer",
+  race:"le jour où tout ce travail se transforme en chrono",
+};
 function renderProgressSynthese(){
   const el=g("progressSynthese"); if(!el) return;
   const pcSe=Math.round(S.fait/S.tot*100), pcKm=Math.round(S.km_fait/S.km_prevu*100);
   const longestRecord=Math.max(...HEBDO.map(w=>w.longest));
+  const lastRun=lastAct("run");
+  const streak=pilierStreak();
 
   let slTxt;
   if(longestRecord<15) slTxt="tes sorties longues démarrent tout juste — l'essentiel de la progression vers 30 km est encore devant toi.";
@@ -531,22 +561,31 @@ function renderProgressSynthese(){
   const predSec=timeToSec(GARMIN.predictions.marathon);
   const gapMin=Math.round((predSec-objSec)/60);
   const gapTxt=gapMin>0
-    ? `si le plan se déroule comme prévu, l'écart de <b>${gapMin} minutes</b> qui te sépare aujourd'hui de <b>${META.objectif.plan}</b> est exactement ce que la sortie longue, le seuil et le renfo sont censés combler d'ici le 8 novembre.`
-    : `tes données actuelles sont déjà sous l'objectif de <b>${META.objectif.plan}</b> — la fin du bloc sert surtout à sécuriser cette marge, pas à en gagner davantage.`;
+    ? `l'écart de <b>${gapMin} minutes</b> qui te sépare aujourd'hui de <b>${META.objectif.plan}</b> est exactement ce que la sortie longue, le seuil et le renfo sont chargés de combler d'ici le 8 novembre — chaque semaine cochée grignote une part de ces ${gapMin} minutes, pas juste une case.`
+    : `tes données actuelles sont déjà sous l'objectif de <b>${META.objectif.plan}</b> — la fin du bloc sert à sécuriser cette avance, pas à en gagner davantage.`;
 
   const wNext=SEMAINES[curWeek], wNext2=SEMAINES[curWeek+1];
-  const nextTxt=[wNext,wNext2].filter(Boolean)
-    .map(w=>`<b>S${w.n} — ${w.titre}</b>`).join(" puis ");
+  const nextTxt=[wNext,wNext2].filter(Boolean).map(w=>
+    `<b>S${w.n} — ${w.titre}</b>${GAIN_BY_TYPE[w.type]?` (${GAIN_BY_TYPE[w.type]})`:""}`
+  ).join(", puis ");
+
+  const lastRunTxt=lastRun
+    ?`Ta dernière sortie, ${jourLong(lastRun.date)} : <b>${lastRun.allure}/km</b>${lastRun.fc?` à <b>${lastRun.fc} bpm</b>`:""} sur <b>${lastRun.km} km</b>.`
+    :"";
 
   el.innerHTML=`
   <div class="co co-g">
-    Semaine <b>${curWeek}</b>/12 · <b>${pcSe} %</b> des séances du bloc réalisées, <b>${pcKm} %</b> du kilométrage prévu.
+    <b>${Math.round(S.km_fait)} km</b> parcourus en <b>${S.fait}</b> séances depuis le 17 août — un socle qui ne se discute pas,
+    quoi qu'il arrive en fin de plan.${streak>=2?` <b>${streak}</b> semaines de suite sans sauter la sortie longue : c'est exactement la
+    régularité qui construira les 30 km de la semaine 10.`:""}
+    <br><br>
+    ${lastRunTxt}
     <br><br>
     Côté sortie longue, ${slTxt} Côté intensité, ${qualTxt} Le renfo suit avec <b>${renfoDone}/${renfoTot}</b> séances faites —
     c'est le complément unilatéral qui manquait avant le bloc (leg press une jambe, fentes bulgares).
     <br><br>
     ${nextTxt?`À venir : ${nextTxt}.<br><br>`:""}
-    Et question chrono : ${gapTxt}
+    Et le chiffre qui compte : ${gapTxt}
   </div>`;
 }
 function renderGauges(){
@@ -610,7 +649,12 @@ function progressCaption(t, good, flat){
   if(!t) return flat;
   return t.good ? good(t) : flat;
 }
-function renderKpis(){
+// Définitions partagées des 9 indicateurs de la grille Progression — une seule source de
+// vérité utilisée à la fois par les petites cartes (renderKpis) et par la page de détail
+// plein écran (renderDetail), pour ne jamais risquer une divergence entre les deux vues.
+// Chaque point de `b` embarque `lundi` : c'est ce qui permet le clic sur une barre pour
+// afficher le détail de cette semaine précise sur la page dédiée.
+function kpiDefs(){
   const H=HEBDO, last=H[H.length-1];
   // Base de calcul des tendances (%) : uniquement des semaines réelles et complètes. Si la
   // dernière semaine de HEBDO est encore en cours, on la retire du calcul et on compare sur
@@ -618,7 +662,9 @@ function renderKpis(){
   // le pourcentage affiché (elle paraît toujours "en baisse").
   const TB=isWeekComplete(last.lundi)?H:H.slice(0,-1);
   const PW=planWeeks();
-  const bars=(field,color,colorHi)=>PW.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:colorHi&&weekHasCotes(x.lundi),proj:x.proj}));
+  // `withHi` : marqueur "semaine à côtes" (surbrillance rouge, hauteur mini visible même à 0) —
+  // uniquement pertinent pour l'indicateur "Temps en côte", jamais sur les autres graphiques.
+  const bars=(field,withHi)=>PW.map(x=>({label:wkLabel(x.lundi),value:x[field],hi:withHi&&weekHasCotes(x.lundi),proj:x.proj,lundi:x.lundi}));
 
   const tVol=trend(TB.map(x=>x.km));
   const slFirst=TB.find(w=>w.longest)?.longest, slNow=Math.max(...H.map(x=>x.longest));
@@ -628,46 +674,49 @@ function renderKpis(){
   const tFcFooting=trend(TB.map(x=>x.fc_footing),true);
   const tCharge=trend(TB.map(x=>x.charge));
 
-  const kpis=[
-    {l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km","#22c3e6"),c:"#22c3e6",
+  return [
+    {key:"km",l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km"),c:"#22c3e6",
      t:tVol,n:progressCaption(tVol,
        t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — tu montes bien vers le pic de ~65 km en semaine 10.`,
        "Le plan te fait monter jusqu'à ~65 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan.")},
-    {l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest","#ffb703"),c:"#ffb703",
+    {key:"longest",l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest"),c:"#ffb703",
      t:trend(TB.map(x=>x.longest)),
      n: slGain>0.5
        ? `+${slGain.toFixed(1)} km depuis le début du suivi — encore ${Math.max(0,30-slNow).toFixed(0)} km avant le pic de la semaine 10.`
        : "Objectif : 30 km en semaine 10. C'est ton principal levier. En clair pointillé : semaines à venir, valeur prévue par le plan."},
-    {l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff","#2dd4bf"),c:"#2dd4bf",
+    {key:"eff",l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff"),c:"#2dd4bf",
      t:tEff,n:progressCaption(tEff,
        t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — ton cœur travaille moins pour la même allure, exactement l'effet recherché.`,
        "Distance parcourue par battement de cœur. En hausse = tu progresses.")},
-    {l:"Allure sorties longues",v:H.filter(x=>x.sl_allure).slice(-1)[0]?.sl_allure,u:"min/km sur ta sortie longue (hors qualité)",b:bars("sl_allure_min","#8b5cf6"),c:"#8b5cf6",
+    {key:"sl_allure_min",l:"Allure sorties longues",v:H.filter(x=>x.sl_allure).slice(-1)[0]?.sl_allure,u:"min/km sur ta sortie longue (hors qualité)",b:bars("sl_allure_min"),c:"#8b5cf6",
      t:tSlAllure,n:progressCaption(tSlAllure,
        t=>`Allure en progression de ${Math.abs(t.pct).toFixed(0)} % sur tes sorties longues — l'endurance spécifique avance, c'est exactement ce que le plan travaille.`,
        "Allure tenue sur ta sortie longue de la semaine (séances de qualité exclues) — le signal le plus direct sur ton endurance spécifique, plus utile que la moyenne toutes sorties.")},
-    {l:"FC à l'effort facile",v:H.filter(x=>x.fc_footing).slice(-1)[0]?.fc_footing,u:"bpm sur tes footings (hors qualité)",b:bars("fc_footing","#ef476f"),c:"#ef476f",
+    {key:"fc_footing",l:"FC à l'effort facile",v:H.filter(x=>x.fc_footing).slice(-1)[0]?.fc_footing,u:"bpm sur tes footings (hors qualité)",b:bars("fc_footing"),c:"#ef476f",
      t:tFcFooting,n:progressCaption(tFcFooting,
        t=>`FC en baisse de ${Math.abs(t.pct).toFixed(0)} % à effort comparable — une vraie adaptation cardiaque, pas un effet mécanique de séances plus dures.`,
        "FC sur les footings uniquement (séances de qualité exclues) — isolée de l'effet mécanique des entraînements qui se durcissent, qui ferait mécaniquement monter une FC moyenne toutes sorties.")},
-    {l:"Temps en côte",v:H.filter(x=>x.incline_min!=null).slice(-1)[0]?.incline_min,u:"min à ≥1 % (tapis inclus) cette semaine",b:bars("incline_min","#fb8500","#ef476f"),c:"#fb8500",
+    {key:"incline_min",l:"Temps en côte",v:H.filter(x=>x.incline_min!=null).slice(-1)[0]?.incline_min,u:"min à ≥1 % (tapis inclus) cette semaine",b:bars("incline_min",true),c:"#fb8500",colorHi:"#ef476f",
      t:trend(TB.map(x=>x.incline_min)),n:"Cumule le vrai dénivelé GPS (dehors) et le temps passé en inclinaison sur tapis (dedans) — contrairement au dénivelé seul, qui reste à 0 sur tapis. En rouge : semaines avec séance de côtes au plan."},
-    {l:"Dénivelé GPS",v:H[H.length-1].dplus,u:"m réels cette semaine (dehors uniquement)",b:bars("dplus","#8b5cf6"),c:"#8b5cf6",
+    {key:"dplus",l:"Dénivelé GPS",v:H[H.length-1].dplus,u:"m réels cette semaine (dehors uniquement)",b:bars("dplus"),c:"#8b5cf6",
      t:trend(TB.map(x=>x.dplus)),n:"Uniquement le relief réel capté en extérieur — souvent à 0 si tes séances de côtes se font sur tapis, ce qui est normal (voir « Temps en côte » ci-dessus pour la vue complète)."},
-    {l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge","#22c3e6"),c:"#22c3e6",
+    {key:"charge",l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge"),c:"#22c3e6",
      t:tCharge,n:(tCharge&&tCharge.pct>0&&last.tsb!=null&&last.tsb>-10)
        ?`Charge en hausse de ${tCharge.pct.toFixed(0)} % et forme encore dans la zone normale — la montée en charge est bien tolérée.`
        :"Indice Strava qui combine durée et intensité (proche d'un TRIMP). Sert de repère de charge globale, pas de podomètre précis."},
-    {l:"Temps en zone haute",v:H[H.length-1].anaero_min,u:"min ≥163 bpm (seuil/VMA) cette semaine",b:bars("anaero_min","#7209b7"),c:"#7209b7",
+    {key:"anaero_min",l:"Temps en zone haute",v:H[H.length-1].anaero_min,u:"min ≥163 bpm (seuil/VMA) cette semaine",b:bars("anaero_min"),c:"#7209b7",
      t:trend(TB.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."}
   ];
+}
+function renderKpis(){
+  const kpis=kpiDefs();
   g("kpis").innerHTML=kpis.map(k=>{
     const t=k.t;
     const badge=t?`<span class="trend ${t.good?'tr-up':(Math.abs(t.pct)<3?'tr-eq':'tr-dn')}">${t.pct>0?'▲':'▼'} ${Math.abs(t.pct).toFixed(0)} %</span>`:'';
-    return `<div class="kpi"><div class="kl">${k.l}</div>
+    return `<div class="kpi kpi-click" data-detail="${k.key}"><div class="kl">${k.l}</div>
       <div class="kv" style="color:${k.c}">${k.v??'—'}</div>
       <div class="ku">${k.u}</div>${badge}
-      ${barChart(k.b,{color:k.c,colorHi:k.c==="#fb8500"?"#ef476f":null,height:100})}<div class="kn">${k.n}</div></div>`}).join("");
+      ${barChart(k.b,{color:k.c,colorHi:k.colorHi,height:100})}<div class="kn">${k.n}</div></div>`}).join("");
   renderForme();
 }
 // Charge/Fatigue/Forme — modèle CTL/ATL/TSB (le même principe que TrainingPeaks), calculé
@@ -693,6 +742,27 @@ function projectCtlAtl(){
     return {lundi:w.du, ctl:Math.round(ctl*10)/10, atl:Math.round(atl*10)/10, tsb:Math.round((ctl-atl)*10)/10, proj:true};
   });
 }
+// Définitions partagées des 3 cartes Fitness/Fatigue/Forme — même principe que kpiDefs() :
+// une seule source de vérité pour les petites cartes et pour la page de détail.
+function formeDefs(){
+  const last=HEBDO[HEBDO.length-1];
+  if(last.tsb==null) return null;
+  const future=projectCtlAtl();
+  // Le calcul de CTL/ATL garde tout l'historique HEBDO (depuis début juin) pour que la moyenne
+  // mobile 42 j ait le temps de se stabiliser avant le début du plan — mais l'affichage doit se
+  // limiter aux 12 semaines du bloc d'entraînement, comme tous les autres indicateurs de la page
+  // (voir kpiDefs(), basé sur planWeeks()/SEMAINES). Sinon l'axe démarre début juin au lieu du
+  // 17 août, ce qui n'apporte rien et mange de l'espace visuel pour rien.
+  const planLundis=new Set(SEMAINES.map(w=>w.du));
+  const allWeeks=HEBDO.filter(w=>planLundis.has(w.lundi))
+    .map(w=>({lundi:w.lundi,ctl:w.ctl,atl:w.atl,tsb:w.tsb,proj:false})).concat(future);
+  const bars=field=>allWeeks.map(x=>({label:wkLabel(x.lundi),value:x[field],proj:x.proj,lundi:x.lundi}));
+  return [
+    {key:"ctl",l:"Fitness (CTL)",v:last.ctl,u:"projection en clair pointillé",c:"#2dd4bf",b:bars("ctl"),autoZoom:false,n:"Charge chronique — ta capacité de fond, monte lentement (42 j)."},
+    {key:"atl",l:"Fatigue (ATL)",v:last.atl,u:"projection en clair pointillé",c:"#ef476f",b:bars("atl"),autoZoom:false,n:"Charge aiguë — réagit vite (7 j) aux semaines dures ou légères."},
+    {key:"tsb",l:"Forme (TSB)",v:last.tsb,u:"projection en clair pointillé",c:"#8b5cf6",b:bars("tsb"),autoZoom:false,n:"CTL − ATL. Négatif = en charge (normal en plein bloc), positif = frais (utile en approche de course)."}
+  ];
+}
 function renderForme(){
   const el=g("forme"); if(!el) return;
   const last=HEBDO[HEBDO.length-1];
@@ -711,27 +781,97 @@ function renderForme(){
     la "Condition physique" Strava/Garmin — formule propriétaire non exposée par les connecteurs et pas forcément cohérente avec le reste de l'app.</span>
   </div>`;
 
-  const future=projectCtlAtl();
-  // Le calcul de CTL/ATL garde tout l'historique HEBDO (depuis début juin) pour que la moyenne
-  // mobile 42 j ait le temps de se stabiliser avant le début du plan — mais l'affichage doit se
-  // limiter aux 12 semaines du bloc d'entraînement, comme tous les autres indicateurs de la page
-  // (voir bars() dans renderKpis, basé sur planWeeks()/SEMAINES). Sinon l'axe démarre début juin
-  // au lieu du 17 août, ce qui n'apporte rien et mange de l'espace visuel pour rien.
-  const planLundis=new Set(SEMAINES.map(w=>w.du));
-  const allWeeks=HEBDO.filter(w=>planLundis.has(w.lundi))
-    .map(w=>({lundi:w.lundi,ctl:w.ctl,atl:w.atl,tsb:w.tsb,proj:false})).concat(future);
-  const bars=field=>allWeeks.map(x=>({label:wkLabel(x.lundi),value:x[field],proj:x.proj}));
-  const cards=[
-    {l:"Fitness (CTL)",v:last.ctl,c:"#2dd4bf",field:"ctl",n:"Charge chronique — ta capacité de fond, monte lentement (42 j)."},
-    {l:"Fatigue (ATL)",v:last.atl,c:"#ef476f",field:"atl",n:"Charge aiguë — réagit vite (7 j) aux semaines dures ou légères."},
-    {l:"Forme (TSB)",v:last.tsb,c:"#8b5cf6",field:"tsb",n:"CTL − ATL. Négatif = en charge (normal en plein bloc), positif = frais (utile en approche de course)."}
-  ];
+  const cards=formeDefs();
   const chartsGrid=`<div class="g g3" style="margin-top:15px">${cards.map(k=>`
-    <div class="kpi"><div class="kl">${k.l}</div>
-      <div class="kv" style="color:${k.c}">${k.v>0&&k.field==="tsb"?"+":""}${k.v}</div>
-      <div class="ku">projection en clair pointillé</div>
-      ${barChart(bars(k.field),{color:k.c,height:100,autoZoom:false})}<div class="kn">${k.n}</div></div>`).join("")}</div>`;
+    <div class="kpi kpi-click" data-detail="${k.key}"><div class="kl">${k.l}</div>
+      <div class="kv" style="color:${k.c}">${k.v>0&&k.key==="tsb"?"+":""}${k.v}</div>
+      <div class="ku">${k.u}</div>
+      ${barChart(k.b,{color:k.c,height:100,autoZoom:k.autoZoom})}<div class="kn">${k.n}</div></div>`).join("")}</div>`;
   el.innerHTML=textCard+chartsGrid;
+}
+
+/* ============================================================
+   RENDU — PAGE DE DÉTAIL PAR INDICATEUR (drill-down semaine par semaine)
+   Atteinte en cliquant sur n'importe quelle carte KPI de la page Progression. Un seul
+   graphique plein écran (kpiDefs()/formeDefs(), même source que les petites cartes — jamais
+   de calcul dupliqué) + un panneau qui affiche le détail chiffré de la semaine cliquée.
+   ============================================================ */
+let detailKey=null;
+function findIndicator(key){
+  const k1=kpiDefs().find(x=>x.key===key);
+  if(k1) return k1;
+  const fd=formeDefs();
+  return (fd&&fd.find(x=>x.key===key))||null;
+}
+function openDetail(key){
+  if(!findIndicator(key)) return;
+  detailKey=key;
+  showPage("detail");
+  renderDetail(key);
+  try{history.replaceState(null,"","#detail/"+key)}catch(e){}
+}
+// Détail chiffré d'une semaine précise : les valeurs réelles si la semaine a eu lieu (HEBDO),
+// sinon un aperçu de ce que le plan prévoit pour cette semaine à venir (weekStats) — cliquer
+// sur une barre pointillée du futur reste donc utile, pas juste sur les barres pleines.
+function weekDetailPanel(lundi){
+  const w=HEBDO.find(h=>h.lundi===lundi);
+  const semaine=SEMAINES.find(x=>x.du===lundi);
+  const titre=`Semaine du ${jourLong(lundi)}${semaine?` — S${semaine.n} ${semaine.titre}`:""}`;
+  if(!w){
+    if(!semaine) return `<div class="dw-title">${titre}</div><div class="kn">Pas de données pour cette semaine.</div>`;
+    const ws=weekStats(semaine);
+    return `<div class="dw-title">${titre}</div>
+      <div class="kn" style="margin-bottom:8px">Semaine à venir — pas encore de données réelles, voici ce que prévoit le plan :</div>
+      <div class="dw-chips">
+        <div class="dw-chip"><span>Volume prévu</span><b>${ws.km} km</b></div>
+        <div class="dw-chip"><span>Sortie longue prévue</span><b>${ws.longest} km</b></div>
+        <div class="dw-chip"><span>Séances qualité</span><b>${ws.q}</b></div>
+        <div class="dw-chip"><span>Renfo</span><b>${ws.renfo}</b></div>
+      </div>`;
+  }
+  const rows=[
+    ["Volume","km","km"],["Sortie longue","longest","km"],["Dénivelé GPS","dplus","m"],
+    ["Temps en côte","incline_min","min"],["Efficience","eff","m/batt"],
+    ["Allure sortie longue","sl_allure","/km"],["FC effort facile","fc_footing","bpm"],
+    ["Charge","charge","pts"],["Fitness (CTL)","ctl",""],["Fatigue (ATL)","atl",""],["Forme (TSB)","tsb",""],
+    ["Temps en zone haute","anaero_min","min"],["Temps aérobie","aero_min","min"]
+  ];
+  const chips=rows.filter(([,f])=>w[f]!=null).map(([l,f,u])=>
+    `<div class="dw-chip"><span>${l}</span><b>${w[f]}${u?` ${u}`:""}</b></div>`).join("");
+  const acts=semaine?weekActivities(semaine):[];
+  const actsTxt=acts.length?`<div class="dw-acts">${acts.map(a=>
+    `<div>${ICO[a.type]||"•"} ${esc(a.nom)}${a.km?` — ${a.km} km`:""}${a.allure?` à ${a.allure}/km`:""}${a.fc?` (${a.fc} bpm)`:""}</div>`).join("")}</div>`:"";
+  return `<div class="dw-title">${titre}</div><div class="dw-chips">${chips}</div>${actsTxt}`;
+}
+function selectDetailWeek(lundi){
+  document.querySelectorAll(`#detailChart .bar-hit`).forEach(r=>r.classList.toggle("sel",r.dataset.lundi===lundi));
+  const panel=g("detailWeekPanel"); if(panel) panel.innerHTML=weekDetailPanel(lundi);
+}
+function renderDetail(key){
+  const ind=findIndicator(key);
+  const el=g("detailBody"); if(!el||!ind) return;
+  g("pageTitle").textContent=ind.l;
+  const t=ind.t;
+  const badge=t?`<span class="trend ${t.good?'tr-up':(Math.abs(t.pct)<3?'tr-eq':'tr-dn')}">${t.pct>0?'▲':'▼'} ${Math.abs(t.pct).toFixed(0)} %</span>`:'';
+  const realWeeks=ind.b.filter(d=>!d.proj&&d.value!=null&&d.lundi);
+  const defaultLundi=realWeeks.length?realWeeks[realWeeks.length-1].lundi:(ind.b.find(d=>d.lundi)?.lundi);
+  const hasChart=ind.b.filter(d=>d.value!=null).length>=2;
+  el.innerHTML=`
+    <button class="cross-link nav-link" data-p="progression" style="margin-bottom:16px">${ICONS.arrowleft}
+      <div><b>Retour à Progression</b><span>Tous les indicateurs</span></div></button>
+    <div class="co co-g">
+      <div class="kl">${ind.l}</div>
+      <div class="kv" style="color:${ind.c};font-size:2rem">${ind.v??'—'}</div>
+      <div class="ku">${ind.u||""}</div>${badge}
+    </div>
+    <div class="card" style="margin-top:14px" id="detailChart">
+      ${barChart(ind.b,{color:ind.c,colorHi:ind.colorHi,height:180,autoZoom:ind.autoZoom})}
+    </div>
+    <p class="lead" style="margin-top:10px">${ind.n}</p>
+    ${hasChart?`<p class="scrollhint">👉 Touche une barre pour voir le détail de cette semaine</p>`:""}
+    <div class="card dw-panel" id="detailWeekPanel" style="margin-top:10px">${defaultLundi?weekDetailPanel(defaultLundi):"<div class=\"kn\">Pas encore de semaine à détailler.</div>"}</div>
+  `;
+  if(defaultLundi) selectDetailWeek(defaultLundi);
 }
 function renderProjection(){
   const objSec=hToSec(META.objectif.plan), raceSec=hToSec(META.objectif.course);
@@ -1004,17 +1144,17 @@ function renderAmeliorations(){
   const majority=signalsKnown>0&&(signalsGood/signalsKnown)>=0.6;
   let trajCls,trajTitle,trajTxt;
   if(gapMin<=0){
-    trajCls="co-v"; trajTitle="Déjà sous l'objectif";
-    trajTxt=`La prédiction Garmin (<b>${secToHM(predSec)}</b>) est déjà sous ton objectif d'entraînement (<b>${META.objectif.plan}</b>). Le plan sert maintenant à consolider cette marge, pas à en gagner davantage.`;
+    trajCls="co-v"; trajTitle="L'objectif est déjà battu sur le papier";
+    trajTxt=`La prédiction Garmin (<b>${secToHM(predSec)}</b>) passe déjà sous <b>${META.objectif.plan}</b>. Il ne reste qu'un travail : verrouiller cette avance jusqu'au 8 novembre, pas en chercher davantage.`;
   } else if(signalsKnown<2){
-    trajCls="co-p"; trajTitle=`Écart de ${gapMin} min — trop tôt pour juger`;
-    trajTxt=`Pas encore assez de semaines avec les 3 indicateurs croisés (efficience, allure sortie longue, FC à l'effort facile) pour dire si la trajectoire est bonne. Normal à ce stade du bloc — regarde à nouveau cette carte dans 2-3 semaines.`;
+    trajCls="co-p"; trajTitle=`${gapMin} min d'écart — verdict prématuré`;
+    trajTxt=`Pas encore assez de semaines avec les 3 indicateurs croisés (efficience, allure sortie longue, FC à l'effort facile) pour trancher. Normal à ce stade — cette carte parlera dans 2-3 semaines, pas avant.`;
   } else if(majority){
-    trajCls="co-v"; trajTitle=`Écart de ${gapMin} min — trajectoire cohérente`;
-    trajTxt=`<b>${signalsGood}/${signalsKnown}</b> indicateurs corrélés progressent ensemble dans le bon sens sur les 3 dernières semaines. C'est le signal qu'on veut voir : l'écart se comble par plusieurs mécanismes en même temps, pas par un seul chiffre isolé qui pourrait n'être qu'un artefact.`;
+    trajCls="co-v"; trajTitle=`${gapMin} min d'écart — le moteur fait son travail`;
+    trajTxt=`<b>${signalsGood}/${signalsKnown}</b> indicateurs corrélés avancent ensemble sur les 3 dernières semaines. C'est exactement le signal qu'on veut voir : l'écart se comble par plusieurs mécanismes en même temps, pas par un chiffre isolé qui pourrait n'être qu'un coup de chance.`;
   } else {
-    trajCls="co-w"; trajTitle=`Écart de ${gapMin} min — signal à surveiller`;
-    trajTxt=`Seulement <b>${signalsGood}/${signalsKnown}</b> indicateurs corrélés progressent pour l'instant. ${curWeek<6?"Encore normal en début de bloc — la fenêtre pour inverser la tendance reste large.":"Passé la mi-bloc, ça mérite un vrai coup d'œil : la carte « Adaptation cardio » juste en dessous détaille lequel des trois traîne."}`;
+    trajCls="co-w"; trajTitle=`${gapMin} min d'écart — ça ne suit pas encore`;
+    trajTxt=`Seulement <b>${signalsGood}/${signalsKnown}</b> indicateurs corrélés progressent. ${curWeek<6?"Encore normal en début de bloc — large place pour inverser la tendance.":"Passé la mi-bloc, ça se regarde en face : la carte « Adaptation cardio » juste en dessous dit lequel des trois traîne."}`;
   }
 
   /* --- 2. Adaptation cardio sous 3 angles, avec le contrôle de fiabilité (allure de footing)
@@ -1022,9 +1162,9 @@ function renderAmeliorations(){
   const sigTxt=(t,nom)=>t?`${nom} : <b>${t.pct>0?"+":""}${t.pct.toFixed(0)} %</b> ${t.good?"✅":"⚠️"}`:`${nom} : pas encore assez de données`;
   let fiabTxt;
   if(!footing) fiabTxt="Pas de footing pur cette semaine (que des séances de qualité) — impossible de vérifier la fiabilité de la mesure pour l'instant.";
-  else if(allureBad) fiabTxt=`⚠️ <b>Point de vigilance :</b> ton footing tourne encore à <b>${footing.allure}/km</b>, en dessous de la zone Z1 (6:00-6:30). Tant que ce sera le cas, la FC à l'effort facile reste bruitée — tu ne compares pas un effort vraiment facile d'une semaine à l'autre. Ralentis avant de tirer une conclusion de cette carte.`;
-  else if(allureOk) fiabTxt=`Ton footing est déjà dans la bonne zone (<b>${footing.allure}/km</b>) — la mesure est fiable : si les indicateurs ci-dessus progressent, c'est une vraie adaptation, pas un artefact d'un footing trop rapide qui gonflerait artificiellement l'efficience.`;
-  else fiabTxt=`Footing à <b>${footing.allure}/km</b> — un peu vite pour la zone Z1 (6:00-6:30), mais tu ralentis dans le bon sens.`;
+  else if(allureBad) fiabTxt=`⚠️ <b>Le vrai point à corriger :</b> ton footing tourne encore à <b>${footing.allure}/km</b>, sous la zone Z1 (6:00-6:30). Tant que ça dure, la FC à l'effort facile reste bruitée — tu ne compares pas un effort vraiment facile d'une semaine à l'autre. Ralentis d'abord, juge ensuite.`;
+  else if(allureOk) fiabTxt=`Footing déjà dans la bonne zone (<b>${footing.allure}/km</b>) — la mesure est fiable. Si les indicateurs ci-dessus progressent, c'est une vraie adaptation, pas un footing trop rapide qui gonfle artificiellement l'efficience.`;
+  else fiabTxt=`Footing à <b>${footing.allure}/km</b> — encore un peu vite pour la zone Z1 (6:00-6:30), mais tu ralentis dans le bon sens.`;
 
   /* --- 3. Charge & forme : croise la tendance de charge avec le TSB ET avec le fait que les
      indicateurs cardio tiennent ou pas — un même TSB négatif n'a pas le même sens selon ça. --- */
@@ -1035,18 +1175,18 @@ function renderAmeliorations(){
   let chargeCls,chargeTitle,chargeTxt;
   if(tsbState==null){ chargeCls="co-p"; chargeTitle="Pas encore assez de données"; chargeTxt="Le modèle CTL/ATL/TSB a besoin de quelques semaines de charge pour se stabiliser."; }
   else if(tsbState==="fatigue"&&!cardioHolding){
-    chargeCls="co-w"; chargeTitle=`Forme (TSB) ${last.tsb} — fatigue accumulée, et ça se voit ailleurs aussi`;
-    chargeTxt=`La charge monte${chargeRising?` (+${tCharge.pct.toFixed(0)} % sur 3 semaines)`:""} et ni l'efficience ni la FC à l'effort facile ne progressent en ce moment — deux signaux qui convergent vers une vraie fatigue, pas juste un chiffre de modèle.
-    <br><b>Action :</b> priorise le sommeil cette semaine.${nextTaper?` La prochaine semaine de décharge est la <b>S${nextTaper.n}</b> (${nextTaper.dates}) — tiens jusque-là plutôt que de couper maintenant, sauf si les sensations deviennent vraiment mauvaises.`:""}`;
+    chargeCls="co-w"; chargeTitle=`Forme (TSB) ${last.tsb} — la fatigue s'accumule pour de vrai`;
+    chargeTxt=`La charge monte${chargeRising?` (+${tCharge.pct.toFixed(0)} % sur 3 semaines)`:""} et ni l'efficience ni la FC à l'effort facile ne progressent en ce moment — deux signaux qui convergent, pas un simple chiffre de modèle qui déraille.
+    <br><b>Action :</b> le sommeil devient la priorité n°1 cette semaine.${nextTaper?` La prochaine décharge est la <b>S${nextTaper.n}</b> (${nextTaper.dates}) — tiens jusque-là plutôt que de couper maintenant, sauf si les sensations tournent vraiment mal.`:""}`;
   } else if(tsbState==="fatigue"&&cardioHolding){
-    chargeCls="co-i"; chargeTitle=`Forme (TSB) ${last.tsb} — fatigue du modèle, mais le cardio tient encore`;
-    chargeTxt=`Le TSB est dans le rouge, mais l'efficience ou la FC à l'effort facile continuent de progresser — le corps encaisse pour l'instant. Ça peut basculer vite : surveille les sensations plus que le chiffre cette semaine.`;
+    chargeCls="co-i"; chargeTitle=`Forme (TSB) ${last.tsb} — le modèle dit fatigue, le corps dit pas encore`;
+    chargeTxt=`Le TSB est dans le rouge, mais l'efficience ou la FC à l'effort facile continuent de progresser — le corps encaisse, pour l'instant. Ça peut basculer vite : cette semaine, fie-toi aux sensations plus qu'au chiffre.`;
   } else if(chargeRising&&(tsbState==="normale"||tsbState==="frais")){
-    chargeCls="co-v"; chargeTitle=`Forme (TSB) ${last.tsb>0?"+":""}${last.tsb} — charge bien digérée`;
-    chargeTxt=`Charge en hausse de <b>${tCharge.pct.toFixed(0)} %</b> sur 3 semaines et forme dans la zone ${tsbState==="frais"?"fraîche":"normale"} — la montée en charge est bien tolérée, il y a de la marge pour la suite du bloc.`;
+    chargeCls="co-v"; chargeTitle=`Forme (TSB) ${last.tsb>0?"+":""}${last.tsb} — la charge passe, tout roule`;
+    chargeTxt=`Charge en hausse de <b>${tCharge.pct.toFixed(0)} %</b> sur 3 semaines et forme dans la zone ${tsbState==="frais"?"fraîche":"normale"} — la montée en charge est encaissée sans effort visible. Il y a de la marge pour la suite du bloc.`;
   } else {
     chargeCls="co-p"; chargeTitle=`Forme (TSB) ${last.tsb>0?"+":""}${last.tsb}`;
-    chargeTxt=`Fitness (CTL) <b>${last.ctl}</b> · Fatigue (ATL) <b>${last.atl}</b>. Rien de particulier à ajuster, continue le plan tel quel.`;
+    chargeTxt=`Fitness (CTL) <b>${last.ctl}</b> · Fatigue (ATL) <b>${last.atl}</b>. Rien à ajuster, le plan tourne comme prévu.`;
   }
 
   /* --- 4. Sortie longue : le rendez-vous concret plutôt qu'un statut générique. --- */
@@ -1061,7 +1201,7 @@ function renderAmeliorations(){
   g("ameliorations").innerHTML=`
 <div class="co ${trajCls}"><b class="t">1. ${trajTitle}</b>${trajTxt}</div>
 
-<div class="co co-i"><b class="t">2. Adaptation cardio — vue sous 3 angles</b>
+<div class="co co-i"><b class="t">2. Ton cœur s'adapte-t-il vraiment ?</b>
   Trois indicateurs mesurent la même adaptation sous des angles différents, sur les 3 dernières semaines :
   <br>${sigTxt(tEff,"Efficience")} · ${sigTxt(tSlAllure,"Allure sortie longue")} · ${sigTxt(tFcFooting,"FC effort facile")}
   <br><br>${fiabTxt}</div>
@@ -1070,12 +1210,12 @@ function renderAmeliorations(){
 
 <div class="co ${slDone?'co-v':slOk?'co-i':'co-w'}"><b class="t">4. Sortie longue — record actuel ${longestRecord} km</b>
   Objectif final : 42,2 km le jour J, pic d'entraînement à 30 km en semaine 10.${slAllureTxt}
-  <br><b>Statut :</b> ${slDone?"pic atteint, la suite c'est l'affûtage — protège cet acquis, n'en rajoute pas.":slOk?"en bonne trajectoire, continue la progression sans brûler d'étape.":slStarting?"tout démarre juste, c'est normal à ce stade du bloc.":"c'est le facteur n°1, ne saute aucune sortie longue d'ici la semaine 10."}
+  <br><b>Statut :</b> ${slDone?"pic atteint : protège-le, n'en rajoute pas — la suite, c'est l'affûtage.":slOk?"bonne trajectoire, continue sans brûler d'étape.":slStarting?"tout démarre juste, c'est normal à ce stade du bloc.":"c'est le facteur n°1 du plan, ne saute aucune sortie longue d'ici la semaine 10."}
   ${nextSL?`<br><b>Prochain rendez-vous :</b> ${nextSL.date?jourLong(toISO(nextSL.date)):`semaine ${nextSL.w.n}`} — ${esc(nextSL.s.t)}${nextSL.s.km?` (${nextSL.s.km} km)`:""}.`:""}</div>
 
 <div class="co ${seuilDone>=seuilAll.length&&seuilAll.length?'co-v':'co-i'}"><b class="t">5. Qualité (VMA/seuil/côtes) — ${qualDone}/${qualTot} séances faites, dont ${seuilDone}/${seuilAll.length} au seuil</b>
   Le seuil est le levier le plus rentable pour élever ton plafond aérobie ; VMA et côtes complètent en vitesse et en force spécifique.
-  <br><b>Statut :</b> ${seuilDone===0?"aucune séance de seuil encore, patience.":seuilDone<seuilAll.length?"en cours, garde l'allure stable du 1ᵉʳ au dernier bloc de chaque séance.":"travail au seuil terminé, ton plafond aérobie a été sollicité tout le bloc."}
+  <br><b>Statut :</b> ${seuilDone===0?"aucune séance de seuil encore — le plafond aérobie n'a pas commencé à bouger.":seuilDone<seuilAll.length?"en cours : garde l'allure stable du 1ᵉʳ au dernier bloc de chaque séance.":"seuil terminé, le plafond aérobie a été sollicité sur tout le bloc."}
   ${nextQual?`<br><b>Prochain rendez-vous :</b> ${nextQual.date?jourLong(toISO(nextQual.date)):`semaine ${nextQual.w.n}`} — ${esc(nextQual.s.t)}.${nextQualA&&nextQualA.tapis?` Cible tapis : ${nextQualA.tapis}`:""}`:""}</div>
 
 <div class="co ${renfoTot?(renfoDone/renfoTot>=0.7?'co-v':'co-i'):'co-p'}"><b class="t">6. Renforcement — ${renfoDone}/${renfoTot} séances faites</b>
@@ -1349,6 +1489,16 @@ document.addEventListener("click",e=>{
   const nl=e.target.closest(".nav-link");
   if(nl && nl.dataset.p){ showPage(nl.dataset.p); return; }
 
+  // Carte KPI cliquée (Progression ou Forme) → page de détail plein écran de cet indicateur.
+  // Testé avant [data-lundi] : un clic sur une barre à l'intérieur d'une petite carte doit
+  // ouvrir le détail de l'indicateur, pas tenter une sélection de semaine (réservée à la
+  // grande page de détail, où les cartes .kpi-click n'existent pas).
+  const kpiCard=e.target.closest(".kpi-click");
+  if(kpiCard && kpiCard.dataset.detail){ openDetail(kpiCard.dataset.detail); return; }
+
+  const barHit=e.target.closest("[data-lundi]");
+  if(barHit){ selectDetailWeek(barHit.dataset.lundi); return; }
+
   if(e.target.closest("#burgerBtn")){ openDrawer(); return; }
   if(e.target.closest("#bottomMenuBtn")){ openDrawer(); return; }
   if(e.target.closest("#drawerScrim")){ closeDrawer(); return; }
@@ -1434,7 +1584,11 @@ function boot(){
   (()=>{const d=new Date(MAJ.date);
     g("drawerMaj").innerHTML=`Synchro <b>${d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</b>`;
   })();
-  showPage(location.hash?location.hash.slice(1):"accueil");
+  const hash=location.hash?location.hash.slice(1):"accueil";
+  // Lien profond vers une page de détail d'indicateur (#detail/eff) : recharger la page (F5,
+  // partage du lien) doit rouvrir directement le bon indicateur, pas retomber sur Progression.
+  if(hash.startsWith("detail/")) openDetail(hash.slice(7));
+  else showPage(hash);
 }
 (async function(){
   // Avant le premier rendu : si une synchro cloud existe (saisie faite sur un
