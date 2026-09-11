@@ -92,14 +92,23 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      "FC moyenne toutes sorties" trompeur. Absent si aucun footing cette semaine (semaine 100 %
      qualité, ça arrive — voir semaine du 7 sept).
    - `incline_min` : minutes cumulées passées à ≥1 % d'inclinaison sur la semaine, **dénivelé GPS et
-     tapis confondus** — remplace/complète `dplus` (dénivelé GPS seul), qui reste à 0 sur toutes les
-     séances de côtes faites sur tapis puisque Strava ne capte aucune élévation en intérieur. Pour une
-     course en extérieur avec du D+, `incline_min` peut rester à 0 même si `dplus` est non nul (une
-     côte courte et raide compte peu en minutes) — les deux indicateurs se complètent, pas l'un ne
-     remplace l'autre. Pour une séance de côtes sur tapis, calculer `incline_min` à partir du
-     protocole exact que Romain communique (ex. "2×1'30 + 6×2' à 6 %..." → additionner la durée de
-     chaque répétition à ≥1 %, **sans compter les récupérations à 0 %**). Sans ce détail communiqué
-     par Romain, laisser le champ absent plutôt que de deviner un temps.
+     tapis confondus** — c'est l'indicateur de suivi principal pour le relief (`dplus`, le dénivelé
+     GPS seul, reste calculé et affiché dans le détail hebdo/Historique, mais n'est plus un indicateur
+     à part sur la page Progression depuis le 11 sept : redondant avec `incline_min`, qui couvre le
+     même signal en mieux car non nul sur tapis). Pour une course en extérieur avec du D+,
+     `incline_min` peut rester à 0 même si `dplus` est non nul (une côte courte et raide compte peu
+     en minutes) — ce n'est pas une erreur. Pour une séance de côtes sur tapis, calculer `incline_min`
+     à partir du protocole exact que Romain communique (ex. "2×1'30 + 6×2' à 6 %..." → additionner la
+     durée de chaque répétition à ≥1 %, **sans compter les récupérations à 0 %**). Sans ce détail
+     communiqué par Romain, laisser le champ absent plutôt que de deviner un temps.
+   - `sommeil_min` : minutes de sommeil par nuit, **moyenne de la semaine** — champ câblé côté app
+     depuis le 11 sept (indicateur "Sommeil" sur Progression, chip dans le détail hebdo) mais **à
+     laisser absent tant que Romain ne porte pas la montre en continu** (même statut que `fc_repos`,
+     voir étape 5 : la référence de vacances n'est pas fiable, ne pas deviner une valeur pour combler
+     le champ). Dès la reprise du port continu (attendue fin septembre / courant octobre) et la
+     récupération du sommeil via `/app/sleep/<date>` (étape 5), moyenner les nuits de la semaine et
+     alimenter ce champ — l'app affichera alors automatiquement l'historique, la tendance et les
+     projections sans qu'aucun changement de code ne soit nécessaire.
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
@@ -133,7 +142,7 @@ window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"na
                      "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0,
                      "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null,
                      "sl_allure_min":null,"sl_allure":null,"fc_footing":null,"eff_footing":null,
-                     "incline_min":null}];
+                     "incline_min":null,"sommeil_min":null}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
 window.ANALYSES  = {"w4s0":{"date":"AAAA-MM-JJ","conclusion":"conforme","texte":"..."}};
