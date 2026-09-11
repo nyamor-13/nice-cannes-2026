@@ -121,6 +121,17 @@ svg{width:19px;height:19px;flex:0 0 auto}
   border-radius:var(--r-md);padding:12px 14px;color:var(--tx2);cursor:pointer;font-size:.83rem;font-weight:700;text-align:left}
 .qlink:hover{border-color:var(--azur-l);color:var(--tx)}
 .qlink svg{color:var(--azur-l);flex:0 0 auto}
+.quicklinks a.qlink:nth-child(5),.quicklinks button.qlink:nth-child(5){grid-column:1/-1}
+
+.cross-link{display:flex;align-items:center;gap:14px;width:100%;background:var(--surface);
+  border:1px solid var(--bd);border-radius:var(--r-lg);padding:16px 18px;color:var(--tx2);
+  cursor:pointer;text-align:left}
+.cross-link:hover{border-color:var(--azur-l)}
+.cross-link>svg:first-child{color:var(--azur-l);flex:0 0 auto;width:22px;height:22px}
+.cross-link div{flex:1}
+.cross-link b{display:block;color:var(--tx);font-size:.92rem}
+.cross-link span{display:block;color:var(--tx3);font-size:.8rem;margin-top:2px}
+.cross-link .chev{flex:0 0 auto;color:var(--tx3)}
 
 /* ---------- CARDS / GRID ---------- */
 .g{display:grid;gap:12px}
@@ -413,6 +424,7 @@ svg{width:19px;height:19px;flex:0 0 auto}
         <div class="drawer-label">Suivi</div>
         <button class="drawer-link nav-link" data-p="progression"></button>
         <button class="drawer-link nav-link" data-p="analyse"></button>
+        <button class="drawer-link nav-link" data-p="ameliorations"></button>
         <button class="drawer-link nav-link" data-p="historique"></button>
       </div>
       <div class="drawer-section">
@@ -491,16 +503,24 @@ svg{width:19px;height:19px;flex:0 0 auto}
         </section>
       </div></section>
 
-      <!-- ═══════ ANALYSE ═══════ -->
+      <!-- ═══════ ANALYSE (pourquoi ce plan) ═══════ -->
       <section class="page" id="page-analyse"><div class="wrap">
         <section>
           <h2>Ce qui se passe dans tes muscles</h2>
           <div id="analyse"></div>
         </section>
+        <section><div id="crossToAmelioration"></div></section>
+      </div></section>
+
+      <!-- ═══════ POINTS D'AMÉLIORATION ═══════ -->
+      <section class="page" id="page-ameliorations"><div class="wrap">
         <section>
           <h2>Points d'amélioration</h2>
+          <p class="lead">Croisé entre tes activités réelles et les indicateurs de progression — pas une checklist isolée, une lecture
+          combinée pour repérer ce qui compte vraiment.</p>
           <div id="ameliorations"></div>
         </section>
+        <section><div id="crossToAnalyse"></div></section>
       </div></section>
 
       <!-- ═══════ HISTORIQUE ═══════ -->
