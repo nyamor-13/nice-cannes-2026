@@ -517,6 +517,11 @@ function pilierStreak(){
   let streak=0;
   for(let n=curWeek-1;n>=1;n--){
     const w=SEMAINES.find(x=>x.n===n); if(!w) break;
+    // Semaines 1-3 : reconstruites rétroactivement depuis Strava, avant que le plan ne soit
+    // structuré en archétypes — leurs séances n'ont donc pas toutes un `a` renseigné, et la
+    // dernière n'est pas systématiquement cochée dans ST. `w.past` suffit à les compter : ce
+    // sont des semaines réellement vécues, pas des semaines de plan à venir qu'on pourrait sauter.
+    if(w.past){ streak++; continue; }
     if(w.s.some(s=>s.a==="off"&&s.fixe)) continue;
     const idx=w.s.findIndex(s=>s.a==="sl"||s.a==="sl_am"||s.a==="course");
     if(idx===-1) break;
