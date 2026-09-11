@@ -126,6 +126,18 @@ body.viewer-mode #syncIconBtn,body.viewer-mode #rst{display:none !important}
 .maj{font-size:.7rem;color:var(--tx3);margin-top:12px;text-align:center}
 .maj b{color:var(--vert)}
 
+/* ---------- HERO BENTO ROW (objectif / streak / dernière activité) ----------
+   Bento ciblé sur l'en-tête Accueil uniquement (cahier de refonte, section 3.3) — fond plat,
+   jamais de dégradé ni de verre dépoli sur ces tuiles. Le countdown au-dessus reste le "hero"
+   principal ; cette rangée est le niveau secondaire, toujours 2-3 tuiles de même poids. */
+.hero-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:14px;text-align:left}
+.hero-tile{background:var(--surface);border:1px solid var(--bd);border-radius:var(--r-md);padding:11px 13px}
+.hero-tile .ht-k{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);
+  display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-tile .ht-v{font-size:1.05rem;font-weight:800;color:var(--tx);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-tile.streak .ht-v{color:var(--corail)}
+.hero-tile.streak.frozen{opacity:.7}
+
 /* ---------- FOCUS CARDS (home) ---------- */
 .focus-cards{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:22px}
 .focus-card{background:var(--surface);border:1px solid var(--bd);border-radius:var(--r-lg);padding:17px 18px;
@@ -513,6 +525,7 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
           <h1>Nice&nbsp;→&nbsp;Cannes</h1>
           <p class="sub" id="subtitle"></p>
           <div class="cds" id="cds"></div>
+          <div class="hero-row" id="heroRow"></div>
           <div class="maj" id="majline"></div>
         </div>
         <section style="margin-top:26px">

@@ -293,12 +293,31 @@ function nextSession(pred){
 /* ============================================================
    RENDU — HEADER / ACCUEIL
    ============================================================ */
+// Rangée bento secondaire sous le countdown (cahier de refonte, 3.3) : objectif toujours affiché,
+// streak seulement à partir de 2 semaines (sinon un "🔥 1" ne dit pas grand-chose et occuperait
+// une tuile pour rien), dernière activité si on en a une. Jamais plus de 3 tuiles — pas de scroll
+// horizontal sur mobile, et ça garde la hiérarchie "un hero, quelques tuiles" du bento.
+function renderHeroRow(){
+  const el=g("heroRow"); if(!el) return;
+  const streak=pilierStreak();
+  const dernier=lastAct();
+  const tiles=[
+    {k:"Objectif",v:META.objectif.plan,cls:""},
+  ];
+  if(streak>=2) tiles.push({k:"Régularité",v:`🔥 ${streak} sem.`,cls:"streak"});
+  if(dernier){
+    const detail=dernier.km?`${dernier.km} km`:dernier.m?`${dernier.m} m`:dernier.nom;
+    tiles.push({k:"Dernière",v:detail,cls:""});
+  }
+  el.innerHTML=tiles.map(t=>`<div class="hero-tile ${t.cls}"><div class="ht-k">${t.k}</div><div class="ht-v">${t.v}</div></div>`).join("");
+}
 function renderHome(){
   g("subtitle").innerHTML=`12 semaines · objectif <b style="color:var(--soleil)">${META.objectif.plan}</b> `+
     `(${META.objectif.allure}/km) · priorité : ${META.priorite.toLowerCase()}`;
   (()=>{const d=new Date(MAJ.date);
     g("majline").innerHTML=`Dernière synchro <b>${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</b> · Strava${MAJ.garmin?" + Garmin":""}`;
   })();
+  renderHeroRow();
 
   const wCur=SEMAINES.find(x=>x.n===curWeek);
   const okCur=wCur.s.filter((s,i)=>isDone(wCur,s,i)).length;
