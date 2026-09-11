@@ -7,10 +7,8 @@
 //  - viewer : tout email présent dans la collection `allowlist`. Lecture
 //             seule — jamais d'écriture, quelle que soit la collection.
 //
-// ⚠️ OWNER_EMAIL est un placeholder — à remplacer par le vrai email Google
-// de Romain avant de déployer ces règles (console Firebase → Firestore
-// Database → Règles → coller ce fichier → Publier). Sans ce remplacement,
-// personne — pas même Romain — n'aura de droits d'écriture.
+// Pour déployer : console Firebase → Firestore Database → Règles → coller ce
+// fichier → Publier.
 //
 // Gérer la liste des viewers : console Firebase → Firestore Database →
 // collection `allowlist` → un document par email autorisé, ID du document
@@ -25,7 +23,7 @@ service cloud.firestore {
 
     function isOwner() {
       return request.auth != null
-        && request.auth.token.email == "OWNER_EMAIL_PLACEHOLDER";
+        && request.auth.token.email == "romain.sammut@gmail.com";
     }
 
     function isAllowedViewer() {

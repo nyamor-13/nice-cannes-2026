@@ -14,9 +14,6 @@
    dernière ne doit plus initialiser Firebase ni se connecter elle-même,
    elle réutilise la session ouverte ici (voir firebase-sync.js).
 
-   ⚠️ OWNER_EMAIL est un placeholder tant que Romain ne l'a pas remplacé
-   par son vrai email Google. Sans ça, personne n'a le rôle owner, même
-   Romain une fois connecté (il verrait l'app en lecture seule).
    ============================================================ */
 (function () {
   const firebaseConfig = {
@@ -28,7 +25,7 @@
     appId: "1:98517277479:web:d4ac0e1f1bc56fc0796702",
   };
 
-  const OWNER_EMAIL = "OWNER_EMAIL_PLACEHOLDER"; // ⚠️ à remplacer — voir en-tête
+  const OWNER_EMAIL = "romain.sammut@gmail.com";
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();

@@ -8,15 +8,23 @@ protégées par firestore.rules. Ce script écrit en tant que compte de service
 (Admin SDK), qui n'est jamais soumis à ces règles (accès admin complet par
 construction) — c'est la tâche planifiée qui agit ici, pas un utilisateur.
 
-Prérequis (à faire une seule fois, par Romain) :
+Prérequis :
   1. pip3 install firebase-admin
-  2. Générer une clé de compte de service : console Firebase → Paramètres du
-     projet → Comptes de service → Générer une nouvelle clé privée (JSON)
-  3. Enregistrer ce fichier quelque part sur ce Mac, JAMAIS dans le dépôt git
-     (déjà ajouté à .gitignore : voir la ligne `firebase-service-account*.json`)
-  4. Définir la variable d'environnement FIREBASE_SERVICE_ACCOUNT_KEY avec le
-     chemin vers ce fichier (ex. dans ~/.zshrc :
-     export FIREBASE_SERVICE_ACCOUNT_KEY="$HOME/.secrets/nice-cannes-2026-admin.json")
+  2. Une clé de compte de service (JSON, console Firebase → Paramètres du
+     projet → Comptes de service → Générer une nouvelle clé privée), JAMAIS
+     dans le dépôt git (voir .gitignore : `firebase-service-account*.json`,
+     `*-firebase-adminsdk-*.json`).
+
+Emplacement de la clé — deux façons, la première suffit dans l'usage normal :
+  a. Par défaut (recommandé, pas de configuration à refaire à chaque session) :
+     ~/.secrets/nice-cannes-2026-firebase-adminsdk.json — chmod 600, hors de
+     tout dépôt git. C'est là qu'elle a été déposée le 11 sept 2026.
+  b. Ou surcharger avec la variable d'environnement FIREBASE_SERVICE_ACCOUNT_KEY
+     si la clé vit ailleurs (utile pour tester avec une autre clé ponctuellement) :
+     export FIREBASE_SERVICE_ACCOUNT_KEY="/chemin/vers/la-cle.json"
+     ⚠️ Une variable exportée dans un terminal ne survit pas d'une session à
+     l'autre (et encore moins d'un jour sur l'autre pour la tâche planifiée) —
+     ne jamais compter dessus comme mécanisme principal, seulement (a).
 
 Usage :
   python3 sync-to-firestore.py strava data-strava.json
@@ -32,6 +40,8 @@ import json
 import os
 import sys
 
+DEFAULT_KEY_PATH = os.path.expanduser("~/.secrets/nice-cannes-2026-firebase-adminsdk.json")
+
 
 def main():
     if len(sys.argv) != 3:
@@ -43,10 +53,10 @@ def main():
         print(f"Document inconnu : {doc_id} (attendu : plan, strava ou withings)", file=sys.stderr)
         sys.exit(1)
 
-    key_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
-    if not key_path or not os.path.isfile(key_path):
+    key_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY") or DEFAULT_KEY_PATH
+    if not os.path.isfile(key_path):
         print(
-            "FIREBASE_SERVICE_ACCOUNT_KEY absent ou introuvable — voir le prérequis en tête de "
+            f"Clé de compte de service introuvable ({key_path}) — voir le prérequis en tête de "
             "ce fichier. Rien n'a été écrit.",
             file=sys.stderr,
         )
