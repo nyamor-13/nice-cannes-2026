@@ -43,9 +43,13 @@
     // Résout `true` si les trois documents existent et ont été chargés dans
     // les globals habituels, `false` si la migration initiale n'a pas encore
     // eu lieu (voir migrate-to-firestore.html), `null` si pas d'accès du tout.
-    ready: window.Auth.ready.then((access) => {
-      if (!access) return null;
-      return loadAll();
-    }),
+    // En mode local (voir index.html), les globals sont déjà là via les
+    // <script> injectés par document.write — rien à lire depuis Firestore.
+    ready: window.__LOCAL_DEV__
+      ? window.Auth.ready.then(() => true)
+      : window.Auth.ready.then((access) => {
+          if (!access) return null;
+          return loadAll();
+        }),
   };
 })();

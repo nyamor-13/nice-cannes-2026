@@ -78,15 +78,19 @@
     // Résout {email, role} une fois l'état Firebase connu ET la lecture test
     // effectuée — ou résout `null` si pas connecté / pas autorisé. Ne résout
     // jamais avant d'être sûr, pour ne jamais flasher du contenu protégé.
-    ready: new Promise((resolve) => {
-      auth.onAuthStateChanged(async (user) => {
-        if (!user) { showScreen("authLogin"); resolve(null); return; }
-        const access = await resolveAccess(user);
-        if (!access) { showScreen("authDenied"); resolve(null); return; }
-        showScreen("app");
-        resolve(access);
-      });
-    }),
+    // En mode local (voir index.html), saute Google entièrement : la machine
+    // de Romain vaut owner par défaut, pas de compte à vérifier.
+    ready: window.__LOCAL_DEV__
+      ? Promise.resolve().then(() => { showScreen("app"); return { email: "local-dev", role: "owner" }; })
+      : new Promise((resolve) => {
+          auth.onAuthStateChanged(async (user) => {
+            if (!user) { showScreen("authLogin"); resolve(null); return; }
+            const access = await resolveAccess(user);
+            if (!access) { showScreen("authDenied"); resolve(null); return; }
+            showScreen("app");
+            resolve(access);
+          });
+        }),
     signIn: trySignIn,
     signOut: doSignOut,
   };

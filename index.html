@@ -644,10 +644,24 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
   </div>
 </div>
 
-<!-- data-plan.js/data-strava.js/data-withings.js ne sont plus chargés ici : leur contenu vit dans
-     Firestore (voir data-cloud.js) depuis la mise en place de l'authentification. Fichiers gardés
-     dans le dépôt uniquement comme source pour la migration ponctuelle (migrate-to-firestore.html),
-     jamais publiés/servis par l'app elle-même. -->
+<!-- data-plan.js/data-strava.js/data-withings.js ne sont plus chargés ici sur le site publié : leur
+     contenu vit dans Firestore (voir data-cloud.js) depuis la mise en place de l'authentification.
+     Fichiers gardés dans le dépôt uniquement comme source pour la migration ponctuelle
+     (migrate-to-firestore.html) et pour le mode local ci-dessous — jamais publiés/servis tels quels
+     par l'app une fois déployée sur GitHub Pages. -->
+<script>
+  // Mode local (double-clic sur index.html, ou serveur de preview de développement) : on charge les
+  // données depuis les fichiers statiques comme avant l'authentification, et auth.js/data-cloud.js
+  // sauteront la connexion Google — c'est la machine de Romain, inutile de se reconnecter pour un
+  // test local. Ce chemin ne s'active JAMAIS sur le site publié, qui tourne toujours sur
+  // https://nyamor-13.github.io/... — jamais file: ni localhost/127.0.0.1.
+  window.__LOCAL_DEV__ = location.protocol === "file:" || ["localhost", "127.0.0.1"].includes(location.hostname);
+  if (window.__LOCAL_DEV__) {
+    document.write('<script src="data-plan.js"><\/script>');
+    document.write('<script src="data-strava.js"><\/script>');
+    document.write('<script src="data-withings.js"><\/script>');
+  }
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
