@@ -131,23 +131,34 @@ function barChart(data,opts){
   const W=300,H=opts.height||110,padL=30,padR=6,padT=8,padB=16;
   const plotW=W-padL-padR, plotH=H-padT-padB;
   const dataMin=Math.min(...vals), dataMax=Math.max(...vals), range=dataMax-dataMin;
+  const hasNeg=dataMin<0;
   // Échelle adaptative : si les valeurs varient peu par rapport à leur amplitude (ex. allure
   // entre 5,4 et 6,0), démarrer l'axe à 0 écrase visuellement la tendance. On resserre alors
   // l'échelle autour des valeurs réelles pour la rendre lisible. Les métriques à vraie
   // amplitude (volume, dénivelé...) gardent un axe à 0, plus honnête sur leur échelle.
-  const zoom=opts.autoZoom!==false && dataMax>0 && (range/dataMax)<0.35;
-  const axisMin=zoom?Math.max(0,dataMin-(range>0?range*0.4:dataMax*0.05)):0;
-  const axisMax=zoom?dataMax+(range>0?range*0.4:dataMax*0.05):(dataMax*1.12||1);
+  // Si les valeurs peuvent être négatives (ex. TSB), l'axe descend sous 0 quoi qu'il arrive —
+  // sinon les barres négatives sortent du cadre et disparaissent silencieusement.
+  const zoom=opts.autoZoom!==false && !hasNeg && dataMax>0 && (range/dataMax)<0.35;
+  const axisMin=hasNeg ? dataMin-(range>0?range*0.15:Math.abs(dataMin)*0.15||1)
+    : (zoom?Math.max(0,dataMin-(range>0?range*0.4:dataMax*0.05)):0);
+  const axisMax=hasNeg ? Math.max(0,dataMax)+(range>0?range*0.15:1)
+    : (zoom?dataMax+(range>0?range*0.4:dataMax*0.05):(dataMax*1.12||1));
   const axisRange=(axisMax-axisMin)||1;
   const n=data.length, slot=plotW/n, bw=Math.min(22,slot*0.6);
   const yFor=v=>padT+plotH-((v-axisMin)/axisRange)*plotH;
+  // La "ligne zéro" ne sert de base aux barres que si l'axe traverse réellement zéro (cas des
+  // graphiques à valeurs négatives, ex. TSB). Sur un axe zoomé qui ne contient pas zéro (ex.
+  // Efficience entre 1,18 et 1,33), yFor(0) tombe hors cadre et ferait exploser la hauteur des
+  // barres — dans ce cas, la base reste le bas du graphique, comme sur un histogramme classique.
+  const yBase=hasNeg?yFor(0):(padT+plotH);
   const bars=data.map((d,i)=>{
     const x=padL+i*slot+(slot-bw)/2;
-    let y=d.value==null?padT+plotH:yFor(d.value);
-    let h=d.value==null?0:(padT+plotH-y);
+    let y,h;
+    if(d.value==null){ y=yBase; h=0; }
+    else{ const yVal=yFor(d.value); y=Math.min(yBase,yVal); h=Math.abs(yBase-yVal); }
     // Un marqueur "hi" (ex. semaine à côtes) doit rester visible même à valeur nulle
     // (le dénivelé d'une séance de côtes sur tapis reste à 0, faute de GPS).
-    if(d.hi && h<3){ h=3; y=padT+plotH-3; }
+    if(d.hi && h<3){ h=3; y=yBase-3; }
     const col=d.hi?(opts.colorHi||"#ffb703"):(opts.color||"#22c3e6");
     // Semaine à venir : valeur projetée depuis le plan (pas encore réelle), affichée en clair
     // avec un contour pointillé pour ne jamais la confondre avec une semaine réalisée.
@@ -556,7 +567,7 @@ function planWeeks(){
     const ws=weekStats(w);
     return {lundi:w.du, km:ws.km, longest:ws.longest, dplus:null, allure_min:null, fc:null,
             eff:null, charge:null, ctl:null, atl:null, tsb:null, aero_min:null, anaero_min:null,
-            sl_allure_min:null, fc_footing:null, proj:true};
+            sl_allure_min:null, fc_footing:null, incline_min:null, proj:true};
   });
 }
 // Phrase de progression sous un histogramme : toujours essayer de dire ce que la tendance signifie
@@ -607,8 +618,10 @@ function renderKpis(){
      t:tFcFooting,n:progressCaption(tFcFooting,
        t=>`FC en baisse de ${Math.abs(t.pct).toFixed(0)} % à effort comparable — une vraie adaptation cardiaque, pas un effet mécanique de séances plus dures.`,
        "FC sur les footings uniquement (séances de qualité exclues) — isolée de l'effet mécanique des entraînements qui se durcissent, qui ferait mécaniquement monter une FC moyenne toutes sorties.")},
-    {l:"Dénivelé",v:H[H.length-1].dplus,u:"m cette semaine",b:bars("dplus","#fb8500","#ef476f"),c:"#fb8500",
-     t:trend(TB.map(x=>x.dplus)),n:"En rouge : semaines avec séance de côtes au plan. Sur tapis, l'inclinaison ne remonte pas ce chiffre (pas de vrai dénivelé GPS) — normal de le voir souvent à 0."},
+    {l:"Temps en côte",v:H.filter(x=>x.incline_min!=null).slice(-1)[0]?.incline_min,u:"min à ≥1 % (tapis inclus) cette semaine",b:bars("incline_min","#fb8500","#ef476f"),c:"#fb8500",
+     t:trend(TB.map(x=>x.incline_min)),n:"Cumule le vrai dénivelé GPS (dehors) et le temps passé en inclinaison sur tapis (dedans) — contrairement au dénivelé seul, qui reste à 0 sur tapis. En rouge : semaines avec séance de côtes au plan."},
+    {l:"Dénivelé GPS",v:H[H.length-1].dplus,u:"m réels cette semaine (dehors uniquement)",b:bars("dplus","#8b5cf6"),c:"#8b5cf6",
+     t:trend(TB.map(x=>x.dplus)),n:"Uniquement le relief réel capté en extérieur — souvent à 0 si tes séances de côtes se font sur tapis, ce qui est normal (voir « Temps en côte » ci-dessus pour la vue complète)."},
     {l:"Charge d'entraînement",v:H[H.length-1].charge,u:"pts (effort relatif Strava, cumulé/semaine)",b:bars("charge","#22c3e6"),c:"#22c3e6",
      t:tCharge,n:(tCharge&&tCharge.pct>0&&last.tsb!=null&&last.tsb>-10)
        ?`Charge en hausse de ${tCharge.pct.toFixed(0)} % et forme encore dans la zone normale — la montée en charge est bien tolérée.`
@@ -630,6 +643,24 @@ function renderKpis(){
 // 7 j pour la charge aiguë). Pas de chiffre "Condition physique" Strava/Garmin ici : ces
 // formules-là sont propriétaires et non exposées par les connecteurs, celle-ci est transparente
 // et cohérente avec le reste de l'app.
+// Projette CTL/ATL/TSB sur les semaines à venir du plan, en estimant leur charge probable à
+// partir du ratio charge/km observé sur la dernière semaine réelle, puis en simulant la moyenne
+// mobile exponentielle jour par jour (charge hebdo répartie sur 7 jours égaux — approximation
+// raisonnable, pas une prédiction précise : on ne connaît pas la vraie intensité future).
+function projectCtlAtl(){
+  const H=HEBDO, last=H[H.length-1];
+  if(last.ctl==null||last.atl==null||!last.km) return [];
+  const chargePerKm=last.charge/last.km;
+  let ctl=last.ctl, atl=last.atl;
+  const future=SEMAINES.filter(w=>w.n>=curWeek && !HEBDO.some(h=>h.lundi===w.du));
+  return future.map(w=>{
+    const ws=weekStats(w);
+    const weekCharge=ws.km*chargePerKm;
+    const daily=weekCharge/7;
+    for(let i=0;i<7;i++){ ctl+=(daily-ctl)/42; atl+=(daily-atl)/7; }
+    return {lundi:w.du, ctl:Math.round(ctl*10)/10, atl:Math.round(atl*10)/10, tsb:Math.round((ctl-atl)*10)/10, proj:true};
+  });
+}
 function renderForme(){
   const el=g("forme"); if(!el) return;
   const last=HEBDO[HEBDO.length-1];
@@ -639,7 +670,7 @@ function renderForme(){
   if(last.tsb>5){ verdict="tu es frais — la charge actuelle est bien digérée, il y a de la marge pour absorber plus."; cls="co-v"; }
   else if(last.tsb>-10){ verdict="zone d'entraînement normale pour un bloc de préparation — ni trop frais, ni cramé."; cls="co-i"; }
   else { verdict="fatigue accumulée significative — surveille le sommeil et les sensations, c'est le moment où les blessures de surcharge arrivent."; cls="co-w"; }
-  el.innerHTML=`
+  const textCard=`
   <div class="co ${cls}"><b class="t">Forme actuelle (charge/fatigue)</b>
     Fitness (CTL) <b>${last.ctl}</b>${tCtl?`, ${tCtl.pct>0?"en hausse":"en baisse"} de ${Math.abs(tCtl.pct).toFixed(0)} % sur 3 semaines`:""} ·
     Fatigue (ATL) <b>${last.atl}</b> · Forme (TSB = CTL − ATL) <b>${last.tsb>0?"+":""}${last.tsb}</b>.
@@ -647,6 +678,21 @@ function renderForme(){
     <br><br><span style="color:var(--tx3);font-size:.8rem">Modèle qu'on maîtrise nous-mêmes (moyennes mobiles 42 j / 7 j sur l'effort relatif Strava), plutôt que
     la "Condition physique" Strava/Garmin — formule propriétaire non exposée par les connecteurs et pas forcément cohérente avec le reste de l'app.</span>
   </div>`;
+
+  const future=projectCtlAtl();
+  const allWeeks=HEBDO.map(w=>({lundi:w.lundi,ctl:w.ctl,atl:w.atl,tsb:w.tsb,proj:false})).concat(future);
+  const bars=field=>allWeeks.map(x=>({label:wkLabel(x.lundi),value:x[field],proj:x.proj}));
+  const cards=[
+    {l:"Fitness (CTL)",v:last.ctl,c:"#2dd4bf",field:"ctl",n:"Charge chronique — ta capacité de fond, monte lentement (42 j)."},
+    {l:"Fatigue (ATL)",v:last.atl,c:"#ef476f",field:"atl",n:"Charge aiguë — réagit vite (7 j) aux semaines dures ou légères."},
+    {l:"Forme (TSB)",v:last.tsb,c:"#8b5cf6",field:"tsb",n:"CTL − ATL. Négatif = en charge (normal en plein bloc), positif = frais (utile en approche de course)."}
+  ];
+  const chartsGrid=`<div class="g g3" style="margin-top:15px">${cards.map(k=>`
+    <div class="kpi"><div class="kl">${k.l}</div>
+      <div class="kv" style="color:${k.c}">${k.v>0&&k.field==="tsb"?"+":""}${k.v}</div>
+      <div class="ku">projection en clair pointillé</div>
+      ${barChart(bars(k.field),{color:k.c,height:100,autoZoom:false})}<div class="kn">${k.n}</div></div>`).join("")}</div>`;
+  el.innerHTML=textCard+chartsGrid;
 }
 function renderProjection(){
   const objSec=hToSec(META.objectif.plan), raceSec=hToSec(META.objectif.course);

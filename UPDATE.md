@@ -91,6 +91,15 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      "les séances de qualité se durcissent donc la FC moyenne monte", qui rendait l'ancien indicateur
      "FC moyenne toutes sorties" trompeur. Absent si aucun footing cette semaine (semaine 100 %
      qualité, ça arrive — voir semaine du 7 sept).
+   - `incline_min` : minutes cumulées passées à ≥1 % d'inclinaison sur la semaine, **dénivelé GPS et
+     tapis confondus** — remplace/complète `dplus` (dénivelé GPS seul), qui reste à 0 sur toutes les
+     séances de côtes faites sur tapis puisque Strava ne capte aucune élévation en intérieur. Pour une
+     course en extérieur avec du D+, `incline_min` peut rester à 0 même si `dplus` est non nul (une
+     côte courte et raide compte peu en minutes) — les deux indicateurs se complètent, pas l'un ne
+     remplace l'autre. Pour une séance de côtes sur tapis, calculer `incline_min` à partir du
+     protocole exact que Romain communique (ex. "2×1'30 + 6×2' à 6 %..." → additionner la durée de
+     chaque répétition à ≥1 %, **sans compter les récupérations à 0 %**). Sans ce détail communiqué
+     par Romain, laisser le champ absent plutôt que de deviner un temps.
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`
@@ -123,7 +132,8 @@ window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ
 window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,
                      "renfo":0,"longest":0,"allure":"5:30","allure_min":5.5,"fc":140,"eff":1.3,"nat_m":0,
                      "charge":0,"ctl":0,"atl":0,"tsb":0,"aero_min":null,"anaero_min":null,
-                     "sl_allure_min":null,"sl_allure":null,"fc_footing":null,"eff_footing":null}];
+                     "sl_allure_min":null,"sl_allure":null,"fc_footing":null,"eff_footing":null,
+                     "incline_min":null}];
 window.TOTAUX    = {"km":0,"h":0,"sorties":0,"natations":0};
 window.MATERIEL  = {"chaussure":{"nom":"Marathon Nice - Cannes","marque":"HOKA","modele":"Clifton 11","km":56.6}};
 window.ANALYSES  = {"w4s0":{"date":"AAAA-MM-JJ","conclusion":"conforme","texte":"..."}};
