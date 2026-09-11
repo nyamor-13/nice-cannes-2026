@@ -1,27 +1,21 @@
 /* ============================================================
    SYNCHRO CLOUD — Firestore (multi-appareils)
-   Un seul document partagé ("app/state") contient exactement les
+   Un seul document partagé ("state/app") contient exactement les
    mêmes données que le localStorage (cases cochées, forme, ressentis,
    notes). Objectif : ce que Romain coche sur son téléphone apparaît
-   aussi sur son Mac, et inversement.
+   aussi sur son Mac, et inversement. Lecture autorisée pour owner et
+   viewers, écriture réservée à owner (voir firestore.rules) — un viewer
+   qui appellerait push() par erreur se ferait simplement rejeter côté
+   serveur, jamais un risque réel.
 
-   Ne bloque jamais l'affichage : si Firebase est indisponible (offline,
-   ouverture en file://, projet mal configuré...), l'app continue de
-   fonctionner uniquement avec le localStorage local, comme avant.
+   Ne s'authentifie plus soi-même : réutilise la session Google ouverte
+   par auth.js (window.Auth). Ne bloque jamais l'affichage : si l'accès
+   n'est pas encore confirmé ou a échoué, pull()/push() renvoient
+   silencieusement sans rien faire — l'app continue avec le localStorage
+   local, comme avant.
    ============================================================ */
 (function () {
-  const firebaseConfig = {
-    apiKey: "AIzaSyCGs15P4Q8Rh7iqjK2Mwvl7rtK6paoSSuo",
-    authDomain: "nice-cannes-2026.firebaseapp.com",
-    projectId: "nice-cannes-2026",
-    storageBucket: "nice-cannes-2026.firebasestorage.app",
-    messagingSenderId: "98517277479",
-    appId: "1:98517277479:web:d4ac0e1f1bc56fc0796702",
-  };
-
   const TIMEOUT_MS = 3000;
-  let db = null;
-  let readyPromise = null;
 
   function withTimeout(promise, ms) {
     return Promise.race([
@@ -30,27 +24,17 @@
     ]);
   }
 
-  function init() {
-    if (readyPromise) return readyPromise;
-    readyPromise = (async () => {
-      try {
-        if (!window.firebase) return false;
-        firebase.initializeApp(firebaseConfig);
-        const cred = await withTimeout(
-          firebase.auth().signInAnonymously(),
-          TIMEOUT_MS
-        );
-        if (!cred) return false;
-        db = firebase.firestore();
-        return true;
-      } catch (e) {
-        return false;
-      }
-    })();
-    return readyPromise;
+  // Attend que auth.js ait confirmé un accès (owner ou viewer). Ne
+  // s'authentifie jamais lui-même — si Auth.ready résout `null` (pas
+  // connecté / pas autorisé), la sync reste silencieusement inactive.
+  async function init() {
+    if (!window.Auth) return false;
+    const access = await window.Auth.ready;
+    return !!access;
   }
 
-  const doc = () => db.collection("app").doc("state");
+  const db = () => firebase.firestore();
+  const doc = () => db().collection("state").doc("app");
 
   window.CloudSync = {
     // Récupère l'état distant sous la forme {st, ts}. Ne dépasse jamais
@@ -63,7 +47,7 @@
     // version plus vieille.
     async pull() {
       const ok = await init();
-      if (!ok || !db) return null;
+      if (!ok) return null;
       try {
         const snap = await withTimeout(doc().get(), TIMEOUT_MS);
         if (snap && snap.exists) {
@@ -80,7 +64,7 @@
     // pour que la comparaison au prochain `pull()` soit cohérente.
     push(state, ts) {
       init().then((ok) => {
-        if (!ok || !db) return;
+        if (!ok) return;
         doc()
           .set({ st: state, ts: ts || Date.now() })
           .catch(() => {});

@@ -41,6 +41,27 @@ h3{font-size:1rem;font-weight:700}
 section{margin:30px 0}
 svg{width:19px;height:19px;flex:0 0 auto}
 
+/* ---------- AUTHENTIFICATION (auth.js) ---------- */
+.auth-screen{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-box{max-width:360px;width:100%;text-align:center;background:var(--surface);border:1px solid var(--bd);
+  border-radius:var(--r-lg);padding:32px 28px;color:var(--tx2);font-size:.92rem}
+.auth-box p{margin-bottom:18px}
+.auth-brand{font-size:1.3rem;font-weight:800;color:var(--tx);margin-bottom:14px}
+.auth-brand span{display:block;font-size:.72rem;font-weight:600;color:var(--tx3);margin-top:2px;letter-spacing:.02em}
+.auth-spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--bd);border-top-color:var(--azur-l);
+  margin:0 auto 16px;animation:auth-spin 0.8s linear infinite}
+@keyframes auth-spin{to{transform:rotate(360deg)}}
+.auth-google-btn{width:100%;background:var(--tx);color:#1a1a1a;border:0;border-radius:var(--r-md);
+  padding:13px;font-weight:700;font-size:.92rem;cursor:pointer}
+.auth-google-btn:disabled{opacity:.6;cursor:default}
+.auth-google-btn:hover:not(:disabled){filter:brightness(.95)}
+.auth-secondary-btn{width:100%;background:transparent;color:var(--tx2);border:1px solid var(--bd);
+  border-radius:var(--r-md);padding:11px;font-size:.86rem;cursor:pointer}
+.auth-error{color:var(--rouge);font-size:.8rem;min-height:1.2em;margin-top:12px}
+.drawer-account{padding:8px 14px;font-size:.76rem;color:var(--tx3);border-top:1px solid var(--bd);margin-top:6px}
+/* Actions réservées à l'owner (sync, reset) — voir boot() dans app.js */
+body.viewer-mode #syncIconBtn,body.viewer-mode #rst{display:none !important}
+
 /* ---------- SHELL : drawer + topbar + main ---------- */
 .app-shell{display:flex;min-height:100vh}
 .drawer-scrim{display:none;position:fixed;inset:0;background:rgba(4,8,13,.6);z-index:80;opacity:0;transition:opacity .2s}
@@ -425,7 +446,28 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
 
 <div class="drawer-scrim" id="drawerScrim"></div>
 
-<div class="app-shell">
+<!-- ═══════ ÉCRANS D'AUTHENTIFICATION (auth.js) ═══════ -->
+<div class="auth-screen" id="authLoading">
+  <div class="auth-box"><div class="auth-spinner"></div><p>Vérification de l'accès…</p></div>
+</div>
+<div class="auth-screen" id="authLogin" style="display:none">
+  <div class="auth-box">
+    <div class="auth-brand">Nice → Cannes<span>Marathon · 8 nov. 2026</span></div>
+    <p>Suivi d'entraînement personnel — connexion requise.</p>
+    <button class="auth-google-btn" id="authSignInBtn">Se connecter avec Google</button>
+    <p class="auth-error" id="authError"></p>
+  </div>
+</div>
+<div class="auth-screen" id="authDenied" style="display:none">
+  <div class="auth-box">
+    <div class="auth-brand">Nice → Cannes<span>Marathon · 8 nov. 2026</span></div>
+    <p><b>Accès non autorisé.</b><br>Ce compte n'a pas été invité à consulter ce suivi.
+    Si tu penses que c'est une erreur, contacte Romain directement.</p>
+    <button class="auth-secondary-btn" id="authSignOutBtn">Changer de compte</button>
+  </div>
+</div>
+
+<div class="app-shell" id="appShell" style="display:none">
   <nav class="drawer" id="drawer">
     <div class="drawer-brand">Nice → Cannes<span>Marathon · 8 nov. 2026</span></div>
     <div class="drawer-scroll">
@@ -449,7 +491,9 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
     </div>
     <div class="drawer-footer">
       <div class="drawer-maj" id="drawerMaj"></div>
+      <div class="drawer-account" id="drawerAccount"></div>
       <button class="drawer-reset" id="rst">↺ Réinitialiser mes saisies</button>
+      <button class="drawer-reset" id="authSignOutBtn2">↪ Se déconnecter</button>
     </div>
   </nav>
 
@@ -600,12 +644,15 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
   </div>
 </div>
 
-<script src="data-plan.js"></script>
-<script src="data-strava.js"></script>
-<script src="data-withings.js"></script>
+<!-- data-plan.js/data-strava.js/data-withings.js ne sont plus chargés ici : leur contenu vit dans
+     Firestore (voir data-cloud.js) depuis la mise en place de l'authentification. Fichiers gardés
+     dans le dépôt uniquement comme source pour la migration ponctuelle (migrate-to-firestore.html),
+     jamais publiés/servis par l'app elle-même. -->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="auth.js"></script>
+<script src="data-cloud.js"></script>
 <script src="firebase-sync.js"></script>
 <script src="app.js"></script>
 </body>

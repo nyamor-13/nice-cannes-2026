@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Migration ponctuelle → Firestore</title>
+<style>
+  body{background:#0a0f16;color:#eef3f9;font-family:-apple-system,sans-serif;max-width:640px;margin:60px auto;padding:0 24px;line-height:1.6}
+  h1{font-size:1.4rem}
+  button{background:#eef3f9;color:#0a0f16;border:0;border-radius:10px;padding:12px 20px;font-weight:700;
+    font-size:.95rem;cursor:pointer;margin:8px 8px 8px 0}
+  button:disabled{opacity:.5;cursor:default}
+  button.danger{background:#ef476f;color:#fff}
+  pre{background:#111925;border:1px solid #1e2a3d;border-radius:10px;padding:14px;font-size:.82rem;overflow:auto;white-space:pre-wrap}
+  .warn{background:rgba(255,183,3,.1);border-left:3px solid #ffb703;padding:12px 16px;margin:16px 0}
+  #log{margin-top:20px}
+</style>
+</head>
+<body>
+<h1>⚠️ Migration ponctuelle des données vers Firestore</h1>
+<div class="warn">
+  <b>Outil à usage unique — à ouvrir en local (double-clic), jamais depuis le site publié.</b><br><br>
+  Lit le contenu actuel de <code>data-plan.js</code>/<code>data-strava.js</code>/<code>data-withings.js</code>
+  (chargés ci-dessous comme avant l'authentification) et l'écrit dans Firestore
+  (<code>appdata/plan</code>, <code>appdata/strava</code>, <code>appdata/withings</code>), protégés par
+  <code>firestore.rules</code>. Une fois la migration confirmée réussie : <b>supprimer ce fichier</b> et ne
+  plus jamais publier <code>data-plan.js</code>/<code>data-strava.js</code>/<code>data-withings.js</code>
+  sur GitHub Pages — leur contenu redeviendrait public.
+</div>
+
+<p>Étape 1 — connecte-toi avec le compte Google qui doit être le <b>owner</b> (celui codé en dur dans
+<code>firestore.rules</code> et <code>auth.js</code>) :</p>
+<button id="btnLogin">Se connecter avec Google</button>
+<div id="whoami" style="margin-top:8px;color:#8fa0ba;font-size:.86rem"></div>
+
+<p style="margin-top:24px">Étape 2 — vérifie ce qui va être écrit, puis lance la migration :</p>
+<button id="btnCheck" disabled>Vérifier l'état actuel de Firestore</button>
+<button id="btnMigrate" class="danger" disabled>Importer vers Firestore</button>
+
+<div id="log"></div>
+
+<!-- Données source — uniquement chargées ici, jamais depuis index.html une fois la migration faite. -->
+<script src="data-plan.js"></script>
+<script src="data-strava.js"></script>
+<script src="data-withings.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+  // Même config que auth.js/firebase-sync.js — projet nice-cannes-2026.
+  const firebaseConfig = {
+    apiKey: "AIzaSyCGs15P4Q8Rh7iqjK2Mwvl7rtK6paoSSuo",
+    authDomain: "nice-cannes-2026.firebaseapp.com",
+    projectId: "nice-cannes-2026",
+    storageBucket: "nice-cannes-2026.firebasestorage.app",
+    messagingSenderId: "98517277479",
+    appId: "1:98517277479:web:d4ac0e1f1bc56fc0796702",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const log = (msg) => { document.getElementById("log").innerHTML += `<pre>${msg}</pre>`; };
+
+  const DOC_FIELDS = {
+    plan: ["META", "ZONES", "ARCHETYPES", "SEMAINES"],
+    strava: ["MAJ", "ACTIVITES", "ANALYSES", "MATERIEL", "GARMIN", "SOMMEIL", "HEBDO", "TOTAUX"],
+    withings: ["WITHINGS"],
+  };
+
+  document.getElementById("btnLogin").addEventListener("click", async () => {
+    try {
+      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    } catch (e) { log("Connexion échouée : " + e.message); }
+  });
+
+  auth.onAuthStateChanged((user) => {
+    document.getElementById("whoami").textContent = user ? `Connecté : ${user.email}` : "Pas connecté.";
+    document.getElementById("btnCheck").disabled = !user;
+    document.getElementById("btnMigrate").disabled = !user;
+  });
+
+  document.getElementById("btnCheck").addEventListener("click", async () => {
+    const db = firebase.firestore();
+    for (const id of Object.keys(DOC_FIELDS)) {
+      try {
+        const snap = await db.collection("appdata").doc(id).get();
+        log(`appdata/${id} : ${snap.exists ? "existe déjà (sera écrasé si tu migres)" : "n'existe pas encore"}`);
+      } catch (e) {
+        log(`appdata/${id} : erreur de lecture (${e.code || e.message}) — vérifie que ton compte est bien le owner`);
+      }
+    }
+  });
+
+  document.getElementById("btnMigrate").addEventListener("click", async () => {
+    if (!confirm("Écrire les données actuelles dans Firestore, en écrasant ce qui existe déjà ?")) return;
+    const db = firebase.firestore();
+    for (const [id, fields] of Object.entries(DOC_FIELDS)) {
+      const payload = {};
+      let missing = [];
+      fields.forEach((f) => { if (window[f] === undefined) missing.push(f); else payload[f] = window[f]; });
+      if (missing.length) log(`⚠️ appdata/${id} : champs manquants ${missing.join(", ")} — vérifie les fichiers source`);
+      try {
+        await db.collection("appdata").doc(id).set(payload);
+        log(`✅ appdata/${id} écrit (${fields.length - missing.length}/${fields.length} champs)`);
+      } catch (e) {
+        log(`❌ appdata/${id} : échec (${e.code || e.message})`);
+      }
+    }
+    log("<b>Terminé.</b> Vérifie l'app réelle avec ce compte, puis avec un compte viewer, avant de considérer la migration réussie.");
+  });
+</script>
+</body>
+</html>

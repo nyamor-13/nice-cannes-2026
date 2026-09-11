@@ -213,17 +213,38 @@ L'app est aussi en ligne (GitHub Pages, accès mobile) : **https://nyamor-13.git
 Dépôt public mais non indexé (`noindex` + `robots.txt`) — ne jamais retirer ces protections,
 les données affichées sont personnelles (poids, FC, allures).
 
-## Publier une mise à jour sur GitHub Pages
+## Publier une mise à jour
 
-Après avoir régénéré `data-strava.js`, pousser le changement pour que le site en ligne se mette à jour :
-```
-cd "/Users/romainsammut/Documents/Claude Code/marathon"
-git add data-strava.js
-git commit -m "Sync données du <date>"
-git push
-```
-Le déploiement GitHub Pages se fait automatiquement après le push (30 s à 1-2 min).
-Ne jamais commiter autre chose que `data-strava.js` sans que ce soit explicitement demandé.
+**⚠️ Changé le 11 sept 2026 avec la mise en place de l'authentification.** `data-strava.js` n'est
+plus un fichier public servi par le site — son contenu vit dans Firestore (`appdata/strava`),
+protégé par `firestore.rules`. Continuer à régénérer `data-strava.js` **localement** exactement
+comme avant (étape 6 ci-dessus) : c'est toujours le format de référence, et il reste utile comme
+trace/diff lisible dans le dépôt. Mais la publication réelle passe maintenant par Firestore, pas
+par un `git push` de ce fichier.
+
+1. Régénérer `data-strava.js` comme d'habitude (étape 6 ci-dessus), le committer dans le dépôt
+   (trace/historique, toujours utile) :
+   ```
+   cd "/Users/romainsammut/Documents/Claude Code/marathon"
+   git add data-strava.js
+   git commit -m "Sync données du <date>"
+   ```
+2. Convertir son contenu en JSON pur (un objet plat avec les mêmes champs `window.X`) et écrire
+   dans Firestore via le compte de service :
+   ```
+   python3 sync-to-firestore.py strava <chemin-vers-le-json>
+   ```
+   Nécessite `FIREBASE_SERVICE_ACCOUNT_KEY` dans l'environnement (clé de compte de service Firebase,
+   jamais commitée — voir l'en-tête de `sync-to-firestore.py` pour la procédure complète). **Si
+   cette variable n'est pas définie, ne pas bloquer la sync pour autant** : committer quand même
+   `data-strava.js` en local (étape 1), signaler dans le compte-rendu que la publication Firestore
+   n'a pas pu se faire faute de clé, et s'arrêter là plutôt que d'échouer bruyamment.
+3. `git push` du commit de l'étape 1 (trace/historique du dépôt, indépendant de la publication
+   réelle vers Firestore).
+
+Ne jamais commiter autre chose que `data-strava.js` sans que ce soit explicitement demandé, et ne
+**jamais** committer une clé de compte de service (`.gitignore` bloque déjà les noms de fichiers
+standards, mais rester vigilant si Romain en fournit une sous un autre nom).
 
 ## Points de vigilance
 

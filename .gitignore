@@ -1,1 +1,6 @@
 .DS_Store
+
+# Clé de compte de service Firebase (Admin SDK) — accès admin complet au
+# projet, ne doit jamais être commitée. Voir sync-to-firestore.py.
+firebase-service-account*.json
+*-firebase-adminsdk-*.json

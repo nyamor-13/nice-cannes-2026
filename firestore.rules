@@ -1,0 +1,70 @@
+// ============================================================
+// RÈGLES DE SÉCURITÉ FIRESTORE — Nice → Cannes 2026
+// Projet Firebase : nice-cannes-2026
+//
+// Deux rôles :
+//  - owner  : Romain, un seul email codé en dur ci-dessous. Tous droits.
+//  - viewer : tout email présent dans la collection `allowlist`. Lecture
+//             seule — jamais d'écriture, quelle que soit la collection.
+//
+// ⚠️ OWNER_EMAIL est un placeholder — à remplacer par le vrai email Google
+// de Romain avant de déployer ces règles (console Firebase → Firestore
+// Database → Règles → coller ce fichier → Publier). Sans ce remplacement,
+// personne — pas même Romain — n'aura de droits d'écriture.
+//
+// Gérer la liste des viewers : console Firebase → Firestore Database →
+// collection `allowlist` → un document par email autorisé, ID du document
+// = l'email lui-même (le contenu du document n'a pas besoin de champs,
+// son existence suffit). Ajouter/retirer un accès = ajouter/supprimer un
+// document, aucun redéploiement de règles nécessaire pour ça.
+// ============================================================
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == "OWNER_EMAIL_PLACEHOLDER";
+    }
+
+    function isAllowedViewer() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email));
+    }
+
+    function isAuthorized() {
+      return isOwner() || isAllowedViewer();
+    }
+
+    // Données personnelles : plan d'entraînement, activités Strava/Garmin,
+    // sommeil, matériel, poids/composition (Withings). Trois documents,
+    // un par fichier JS d'origine (appdata/plan, appdata/strava,
+    // appdata/withings) — voir app.js pour le détail des champs.
+    // Lecture : owner + viewers autorisés. Écriture : owner uniquement
+    // (la sync quotidienne écrit via un compte de service Admin SDK, qui
+    // n'est de toute façon jamais soumis à ces règles côté client).
+    match /appdata/{doc} {
+      allow read: if isAuthorized();
+      allow write: if isOwner();
+    }
+
+    // État de progression : cases cochées, forme du jour, notes perso.
+    // Lecture pour tous les autorisés (un viewer doit voir la vraie
+    // progression de Romain), écriture réservée à l'owner.
+    match /state/{doc} {
+      allow read: if isAuthorized();
+      allow write: if isOwner();
+    }
+
+    // Liste des emails viewers. Jamais lue ni écrite depuis l'app cliente
+    // (gérée à la main dans la console Firebase, voir en-tête du fichier)
+    // — donc aucun accès nécessaire ici, même pour l'owner. On refuse tout
+    // explicitement plutôt que de laisser une règle par défaut ambiguë.
+    match /allowlist/{email} {
+      allow read, write: if false;
+    }
+
+    // Tout le reste : refusé par défaut (pas de règle "allow" générique).
+  }
+}

@@ -91,7 +91,12 @@ function closeSync(){g("syncModal").classList.remove("on");g("syncScrim").classL
 
 /* ---------- COUNTDOWN ---------- */
 const NOW=new Date();
-const RACE=new Date(META.date);
+// RACE/curWeek/S dépendent de données chargées depuis Firestore de façon asynchrone (auth.js/
+// data-cloud.js) — impossible de les calculer au chargement du script comme avant (l'ancien
+// data-plan.js était synchrone, <script src>). Déclarées ici pour rester visibles par toutes les
+// fonctions du fichier, mais seulement assignées par initData(), appelé au tout début de boot()
+// une fois window.DataCloud.ready résolu. Ne jamais les lire avant ce point.
+let RACE, curWeek, S;
 function tick(){
   const ms=RACE-new Date();
   const el=g("cds"); if(!el) return;
@@ -100,13 +105,6 @@ function tick(){
   el.innerHTML=[[Math.ceil(d/7),"semaines"],[d,"jours"],[h,"h"],[m,"min"],[s,"s"]]
     .map(([v,l])=>`<div class="cd"><b>${v}</b><span>${l}</span></div>`).join("");
 }
-
-/* ---------- SEMAINE COURANTE ---------- */
-const curWeek=(()=>{
-  let c=SEMAINES[0];
-  for(const w of SEMAINES){const d=new Date(w.du+"T00:00:00");if(d<=NOW)c=w;}
-  return c.n;
-})();
 
 /* ---------- STATS GLOBALES ---------- */
 function stats(){
@@ -121,7 +119,17 @@ function stats(){
   }));
   return{tot,fait,km_prevu,km_fait,parType,restKm,restSe};
 }
-const S=stats();
+// Assigne RACE/curWeek/S — à appeler une seule fois, tout au début de boot(), une fois les
+// données Firestore chargées (window.DataCloud.ready résolu). Voir la déclaration `let` plus haut.
+function initData(){
+  RACE=new Date(META.date);
+  curWeek=(()=>{
+    let c=SEMAINES[0];
+    for(const w of SEMAINES){const d=new Date(w.du+"T00:00:00");if(d<=NOW)c=w;}
+    return c.n;
+  })();
+  S=stats();
+}
 
 /* ---------- TENDANCES ---------- */
 // Histogramme SVG avec axes lisibles (échelle + repères hebdo), pour remplacer les
@@ -1523,7 +1531,9 @@ function renderPlanning(w){
   </div>`;
 }
 function sess(w,s,i){
-  const st=getS(w,i), done=isDone(w,s,i), lock=!!s.past, k=s.k||"run";
+  // Un viewer ne peut jamais cocher une séance — même règle visuelle qu'une séance déjà figée
+  // dans l'historique (`s.past`), qui réutilise exactement le même style "verrouillé".
+  const st=getS(w,i), done=isDone(w,s,i), lock=!!s.past||!isOwner(), k=s.k||"run";
   const A=s.a?ARCHETYPES[s.a]:null;
   const forme=st.forme||"normal";
   const mets=s.m?`<div class="mets">${[
@@ -1585,15 +1595,20 @@ function detail(w,s,i,A,forme,st){
     ${A.lieux?`<div class="blk"><div class="bl">Où</div><div class="bt">${A.lieux}</div></div>`:""}
     ${A.ravito?`<div class="blk"><div class="bl">Ravitaillement</div><div class="bt">${A.ravito}</div></div>`:""}
     <div class="blk"><div class="bl">Comment je me sens aujourd'hui ?</div>
-      <div class="formes">${FORMES.map(([k,l])=>
-        `<button class="fbtn ${forme===k?"on":""}" data-f="${k}">${l}</button>`).join("")}</div>
+      ${isOwner()
+        ?`<div class="formes">${FORMES.map(([k,l])=>
+            `<button class="fbtn ${forme===k?"on":""}" data-f="${k}">${l}</button>`).join("")}</div>`
+        :`<div class="formes"><span class="fbtn on" style="cursor:default">${FORMES.find(([k])=>k===forme)?.[1]||forme}</span></div>`}
       <div class="fadapt"><b>Adaptation :</b> ${A.forme[forme]}
         ${s.f?`<br><b>Durée :</b> ${forme==="top"?s.f[1]:forme==="bof"?s.f[0]:forme==="hs"?"réduite":Math.round((s.f[0]+s.f[1])/2)} min`:""}</div>
     </div>
-    <div class="ressenti">
+    ${isOwner()?`<div class="ressenti">
       <div class="bl">Ressenti après la séance <span class="saved">enregistré ✓</span></div>
       <textarea data-note="1" placeholder="Comment ça s'est passé ? Sensations, allure tenue, douleurs…">${esc(st.note||"")}</textarea>
-    </div>
+    </div>`:(st.note?`<div class="ressenti">
+      <div class="bl">Ressenti après la séance</div>
+      <div class="bt">${esc(st.note)}</div>
+    </div>`:"")}
   </div>`;
 }
 
@@ -1635,17 +1650,20 @@ document.addEventListener("click",e=>{
   const se=e.target.closest(".se");
   if(se){
     const w=SEMAINES.find(x=>x.n==+se.dataset.w), i=+se.dataset.i;
-    if(e.target.closest("[data-chk]")){ setS(w,i,{done:!getS(w,i).done}); boot(); return; }
+    // data-chk/.fbtn n'existent normalement plus dans le HTML d'un viewer (voir sess()/detail()),
+    // mais on revérifie isOwner() ici en défense en profondeur — la vraie barrière reste de toute
+    // façon firestore.rules (écriture state/* refusée côté serveur pour un non-owner).
+    if(e.target.closest("[data-chk]")){ if(isOwner()){ setS(w,i,{done:!getS(w,i).done}); boot(); } return; }
     if(e.target.closest("[data-exp]")){ setS(w,i,{open:!getS(w,i).open}); refreshWeekViews(w.n); return; }
     const fb=e.target.closest(".fbtn");
-    if(fb){ setS(w,i,{forme:fb.dataset.f}); refreshWeekViews(w.n); return; }
+    if(fb){ if(isOwner()) setS(w,i,{forme:fb.dataset.f}); refreshWeekViews(w.n); return; }
   }
   const wh=e.target.closest(".wh");
   if(wh) wh.parentElement.classList.toggle("open");
 });
 
 document.addEventListener("input",e=>{
-  const ta=e.target.closest("[data-note]"); if(!ta) return;
+  const ta=e.target.closest("[data-note]"); if(!ta||!isOwner()) return;
   const se=ta.closest(".se");
   const w=SEMAINES.find(x=>x.n==+se.dataset.w);
   setS(w,+se.dataset.i,{note:ta.value});
@@ -1690,7 +1708,11 @@ document.addEventListener("DOMContentLoaded",()=>{
    INITIALISATION
    ============================================================ */
 function boot(){
+  initData();
   buildNav();
+  // Actions réservées à l'owner (sync manuelle, reset des saisies) : masquées pour un viewer,
+  // pas seulement désactivées — un viewer n'a aucune raison de savoir que ces boutons existent.
+  document.body.classList.toggle("viewer-mode",!isOwner());
   tick();
   renderHome();
   renderFocusPage("focusCoursBody",curWeek,true);
@@ -1716,13 +1738,40 @@ function boot(){
   if(hash.startsWith("detail/")) openDetail(hash.slice(7));
   else showPage(hash);
 }
+// Rôle de la personne connectée ({email,role:"owner"|"viewer"}), résolu une fois pour toutes au
+// démarrage — jamais recalculé ailleurs. `isOwner()` est LE point de vérité côté UI pour savoir
+// s'il faut afficher les actions d'écriture (cases à cocher, forme, notes, sync, reset...). Ça ne
+// remplace pas firestore.rules (seule vraie barrière), ça évite juste d'afficher des contrôles
+// qu'un viewer ne pourrait de toute façon pas utiliser.
+window.CURRENT_ACCESS=null;
+const isOwner=()=>window.CURRENT_ACCESS?.role==="owner";
 (async function(){
-  // Avant le premier rendu : si une synchro cloud existe (saisie faite sur un
-  // autre appareil) ET qu'elle est plus récente que ce qu'on a déjà en local,
-  // elle prime sur le localStorage local. Sans cette comparaison de date,
-  // un cloud resté en retard (écriture précédente pas encore arrivée) pourrait
-  // écraser une saisie locale toute fraîche — ne bloque jamais longtemps,
-  // CloudSync.pull() a son propre timeout interne.
+  // 1. Authentification (auth.js) — résout {email,role} ou null si pas connecté/pas autorisé.
+  // auth.js gère déjà l'affichage de l'écran de connexion/refus dans ce cas ; ici on s'arrête
+  // simplement, il n'y a rien de plus à faire tant que l'accès n'est pas confirmé.
+  const access=window.Auth?await window.Auth.ready:null;
+  if(!access) return;
+  window.CURRENT_ACCESS=access;
+
+  // 2. Données personnelles (data-cloud.js) — lit appdata/plan+strava+withings depuis Firestore.
+  // `false` = les documents n'existent pas encore (migration initiale pas encore faite, voir
+  // migrate-to-firestore.html) : on ne peut pas booter sans données, mais on ne casse pas non
+  // plus silencieusement — message explicite plutôt qu'une page blanche ou une erreur JS opaque.
+  const dataOk=window.DataCloud?await window.DataCloud.ready:false;
+  if(!dataOk){
+    document.getElementById("appShell").innerHTML=
+      `<div style="padding:40px 24px;text-align:center;color:var(--tx2)">
+        <b style="color:var(--tx)">Données pas encore initialisées.</b><br><br>
+        ${isOwner()?"Ouvre <code>migrate-to-firestore.html</code> en local pour importer les données une première fois.":
+        "Contacte Romain — le suivi n'a pas encore été configuré."}
+      </div>`;
+    document.getElementById("appShell").style.display="";
+    return;
+  }
+
+  // 3. État de progression (cases cochées, forme, notes) — même logique qu'avant l'auth : si un
+  // état cloud plus récent existe, il prime sur le localStorage local. CloudSync lit maintenant la
+  // session Google ouverte à l'étape 1 au lieu de sa propre auth anonyme (voir firebase-sync.js).
   if(window.CloudSync){
     const localTs=Number(localStorage.getItem(TSKEY)||0);
     const remote=await window.CloudSync.pull();
@@ -1733,5 +1782,7 @@ function boot(){
     }
   }
   boot();
+  const acc=g("drawerAccount");
+  if(acc) acc.textContent=`${access.email} · ${access.role==="owner"?"toi":"lecture seule"}`;
   setInterval(tick,1000);
 })();
