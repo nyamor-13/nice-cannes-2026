@@ -16,6 +16,21 @@ window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOK
 
 window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:28", "10k": "45:49", "semi": "1:43:47", "marathon": "3:53:51"}, "sommeil": null, "vfc": null};
 
+// Détail nuit par nuit — exploration ponctuelle du 11 sept (pas un suivi en continu) : 6 nuits
+// réelles retrouvées sur Garmin mi/fin août (avant la pause du 9 sept), utilisées pour tester
+// le modèle de données et la corrélation sommeil/fatigue en conditions réelles. Les moyennes
+// hebdo correspondantes (sommeil_min/sommeil_profond_min/sommeil_paradoxal_min/sommeil_score/
+// sommeil_hrv) sont déjà reportées dans HEBDO pour les semaines du 10, 17 et 24 août. Ce tableau
+// ne sera pas régénéré par la sync tant que le port continu n'a pas repris (voir UPDATE.md).
+window.SOMMEIL = [
+  {"date": "2026-08-15", "score": 92, "duree_min": 550, "profond_min": 107, "leger_min": 309, "paradoxal_min": 135, "eveil_min": 3, "hr_nuit": 50, "hr_repos": 45, "hrv": 80, "spo2_moy": 96},
+  {"date": "2026-08-17", "score": 72, "duree_min": 402, "profond_min": 88, "leger_min": 280, "paradoxal_min": 34, "eveil_min": 1, "hr_nuit": 59, "hr_repos": 50, "hrv": 69, "spo2_moy": 95},
+  {"date": "2026-08-20", "score": 68, "duree_min": 326, "profond_min": 97, "leger_min": 196, "paradoxal_min": 33, "eveil_min": 3, "hr_nuit": 52, "hr_repos": 44, "hrv": 66, "spo2_moy": 98},
+  {"date": "2026-08-23", "score": 44, "duree_min": 238, "profond_min": 0, "leger_min": 201, "paradoxal_min": 38, "eveil_min": 1, "hr_nuit": 48, "hr_repos": 43, "hrv": 84, "spo2_moy": 93},
+  {"date": "2026-08-27", "score": 78, "duree_min": 472, "profond_min": 22, "leger_min": 336, "paradoxal_min": 115, "eveil_min": 1, "hr_nuit": 55, "hr_repos": 49, "hrv": 73, "spo2_moy": 97},
+  {"date": "2026-08-29", "score": 81, "duree_min": 446, "profond_min": 78, "leger_min": 296, "paradoxal_min": 73, "eveil_min": 0, "hr_nuit": 54, "hr_repos": 47, "hrv": 61, "spo2_moy": 96}
+];
+
 window.HEBDO = [
  {
   "lundi": "2026-06-01",
@@ -224,7 +239,12 @@ window.HEBDO = [
   "charge": 153,
   "ctl": 23.4,
   "atl": 24.0,
-  "tsb": -0.6
+  "tsb": -0.6,
+  "sommeil_min": 550,
+  "sommeil_profond_min": 107,
+  "sommeil_paradoxal_min": 135,
+  "sommeil_score": 92,
+  "sommeil_hrv": 80
  },
  {
   "lundi": "2026-08-17",
@@ -247,7 +267,12 @@ window.HEBDO = [
   "sl_allure_min": 5.98,
   "sl_allure": "5:59",
   "fc_footing": 137.7,
-  "eff_footing": 1.214
+  "eff_footing": 1.214,
+  "sommeil_min": 322,
+  "sommeil_profond_min": 61.7,
+  "sommeil_paradoxal_min": 35,
+  "sommeil_score": 61.3,
+  "sommeil_hrv": 73
  },
  {
   "lundi": "2026-08-24",
@@ -270,7 +295,12 @@ window.HEBDO = [
   "sl_allure_min": 5.617,
   "sl_allure": "5:37",
   "fc_footing": 140.5,
-  "eff_footing": 1.267
+  "eff_footing": 1.267,
+  "sommeil_min": 459,
+  "sommeil_profond_min": 50,
+  "sommeil_paradoxal_min": 94,
+  "sommeil_score": 79.5,
+  "sommeil_hrv": 67
  },
  {
   "lundi": "2026-08-31",

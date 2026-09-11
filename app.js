@@ -718,7 +718,7 @@ function kpiDefs(){
      t:trend(TB.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."},
     {key:"sommeil",l:"Sommeil",v:lastSommeil!=null?`${Math.round(lastSommeil/6)/10}h`:null,
      u:"heures de sommeil/nuit (moyenne hebdo)",b:bars("sommeil_min"),c:"#818cf8",
-     t:tSommeil,n:"En attente du port continu de la montre — l'indicateur s'alimentera automatiquement, sans rien à reconfigurer, dès que les données Garmin seront disponibles.",
+     t:tSommeil,n:"Semaines S1-S2 : quelques nuits captées mi/fin août, à titre de test (avant la pause du 9 sept), pas un suivi continu. L'indicateur reprendra automatiquement, sans rien à reconfigurer, dès le port continu de la montre (fin septembre / courant octobre).",
      emptyMsg:"En attente du port continu de la montre (fin septembre / courant octobre) — cet indicateur s'alimentera automatiquement dès que les données Garmin seront disponibles."}
   ];
 }
@@ -849,7 +849,9 @@ function weekDetailPanel(lundi){
     ["Allure sortie longue","sl_allure","/km"],["FC effort facile","fc_footing","bpm"],
     ["Charge","charge","pts"],["Fitness (CTL)","ctl",""],["Fatigue (ATL)","atl",""],["Forme (TSB)","tsb",""],
     ["Temps en zone haute","anaero_min","min"],["Temps aérobie","aero_min","min"],
-    ["Sommeil","sommeil_min","min/nuit"]
+    ["Sommeil","sommeil_min","min/nuit"],["Score de sommeil","sommeil_score","/100"],
+    ["Sommeil profond","sommeil_profond_min","min/nuit"],["Sommeil paradoxal","sommeil_paradoxal_min","min/nuit"],
+    ["VFC nocturne","sommeil_hrv","ms"]
   ];
   const chips=rows.filter(([,f])=>w[f]!=null).map(([l,f,u])=>
     `<div class="dw-chip"><span>${l}</span><b>${w[f]}${u?` ${u}`:""}</b></div>`).join("");
@@ -898,10 +900,23 @@ function indicatorAnalysis(key){
       txt:`${last.aero_min!=null?`Cette semaine : <b>${last.aero_min} min</b> en aérobie (&lt;163 bpm) pour <b>${last.anaero_min ?? 0} min</b> en zone haute (seuil/VMA).`:"Calculé à partir des tours de chaque course, disponible seulement depuis le 7 septembre — pas d'historique avant."} Un ratio qui penche de plus en plus vers la zone haute au fil du bloc est cohérent avec la montée en intensité prévue par le plan.`};
   }
   if(key==="sommeil"){
-    return {cls:"co-p",title:"En attente de données",
+    const rows=sommeilSignals();
+    if(!rows) return {cls:"co-p",title:"En attente de données",
       txt:"Cet indicateur est prêt à s'alimenter dès que tu porteras la montre en continu (attendu fin septembre / courant octobre) — durée de sommeil moyenne par nuit, semaine par semaine, avec exactement le même modèle que les autres indicateurs (histogramme, tendance, projection). Une fois calibré sur de vraies données, il pourra aussi devenir un facteur correctif du verdict de forme (TSB) affiché sur les indicateurs Charge/CTL/ATL/TSB — mais pas avant d'avoir de quoi calibrer ce lien plutôt que de deviner une formule."};
+    const lines=rows.map(r=>`Semaine du ${jourLong(r.lundi)} : score <b>${r.score}/100</b>, sommeil profond <b>${Math.round(r.profond)} min/nuit</b> — forme (TSB) <b>${r.tsb>0?"+":""}${r.tsb}</b>${r.fc_footing?`, FC effort facile <b>${r.fc_footing} bpm</b>`:""}.`).join("<br>");
+    return {cls:"co-p",title:"Exploration — sommeil croisé avec forme et FC (test, pas un modèle validé)",
+      txt:`Sur les seules semaines où on a des nuits captées (quelques jours mi/fin août, avant la pause du 9 sept), voici ce que ça donne à titre d'exemple :<br><br>${lines}
+      <br><br>Beaucoup trop peu de semaines pour en tirer une vraie conclusion (3 points, et le sommeil n'est qu'une poignée de nuits par semaine, pas une couverture complète) — mais le mécanisme est prêt : dès que le port continu reprendra, ce croisement s'enrichira automatiquement et pourra nourrir le verdict de forme sur les indicateurs Charge/CTL/ATL/TSB.`};
   }
   return null;
+}
+// Sommeil (exploration, pas un modèle validé) : croise les quelques nuits réelles captées
+// mi/fin août avec la forme (TSB) et la FC à l'effort facile de la même semaine — sert à tester
+// le mécanisme de corrélation avant que le vrai suivi continu ne démarre.
+function sommeilSignals(){
+  const weeks=HEBDO.filter(w=>w.sommeil_score!=null);
+  if(!weeks.length) return null;
+  return weeks.map(w=>({lundi:w.lundi, score:w.sommeil_score, profond:w.sommeil_profond_min, tsb:w.tsb, fc_footing:w.fc_footing}));
 }
 function renderDetail(key){
   const ind=findIndicator(key);
@@ -1231,6 +1246,15 @@ function chargeSignals(){
   } else {
     cls="co-p"; title=`Forme (TSB) ${last.tsb>0?"+":""}${last.tsb}`;
     txt=`Fitness (CTL) <b>${last.ctl}</b> · Fatigue (ATL) <b>${last.atl}</b>. Rien à ajuster, le plan tourne comme prévu.`;
+  }
+  // Signal sommeil, si la semaine courante en a (câblé dès maintenant, sans effet tant que le
+  // port continu n'a pas repris — voir sommeilSignals()/UPDATE.md). Vient nuancer le verdict
+  // TSB plutôt que le remplacer : un score de sommeil bas renforce la lecture "fatigue réelle",
+  // un score correct nuance un TSB dans le rouge qui pourrait n'être qu'un artefact du modèle.
+  if(last.sommeil_score!=null){
+    txt+= last.sommeil_score<70
+      ? ` <br><br>💤 <b>Signal sommeil (test) :</b> score moyen <b>${last.sommeil_score}/100</b> cette semaine-là, sommeil profond <b>${Math.round(last.sommeil_profond_min)} min/nuit</b> — en dessous de ce qu'on veut voir en période de charge, cohérent avec une fatigue qui ne tiendrait pas qu'au chiffre de modèle.`
+      : ` <br><br>💤 <b>Signal sommeil (test) :</b> score moyen <b>${last.sommeil_score}/100</b>, sommeil profond <b>${Math.round(last.sommeil_profond_min)} min/nuit</b> — un bon socle de récupération cette semaine-là.`;
   }
   return {tCharge,tsbState,chargeRising,cardioHolding,nextTaper,cls,title,txt};
 }
