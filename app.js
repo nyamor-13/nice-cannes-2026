@@ -680,7 +680,14 @@ function renderForme(){
   </div>`;
 
   const future=projectCtlAtl();
-  const allWeeks=HEBDO.map(w=>({lundi:w.lundi,ctl:w.ctl,atl:w.atl,tsb:w.tsb,proj:false})).concat(future);
+  // Le calcul de CTL/ATL garde tout l'historique HEBDO (depuis début juin) pour que la moyenne
+  // mobile 42 j ait le temps de se stabiliser avant le début du plan — mais l'affichage doit se
+  // limiter aux 12 semaines du bloc d'entraînement, comme tous les autres indicateurs de la page
+  // (voir bars() dans renderKpis, basé sur planWeeks()/SEMAINES). Sinon l'axe démarre début juin
+  // au lieu du 17 août, ce qui n'apporte rien et mange de l'espace visuel pour rien.
+  const planLundis=new Set(SEMAINES.map(w=>w.du));
+  const allWeeks=HEBDO.filter(w=>planLundis.has(w.lundi))
+    .map(w=>({lundi:w.lundi,ctl:w.ctl,atl:w.atl,tsb:w.tsb,proj:false})).concat(future);
   const bars=field=>allWeeks.map(x=>({label:wkLabel(x.lundi),value:x[field],proj:x.proj}));
   const cards=[
     {l:"Fitness (CTL)",v:last.ctl,c:"#2dd4bf",field:"ctl",n:"Charge chronique — ta capacité de fond, monte lentement (42 j)."},
