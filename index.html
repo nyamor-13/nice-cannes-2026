@@ -239,6 +239,21 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
 .focus-days{font-size:.74rem;font-weight:700;color:var(--tx3)}
 .focus-title{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin-top:10px}
 .wd{font-size:.79rem;color:var(--tx2);margin-top:2px}
+
+/* ---------- BENTO MINI — en-tête Semaine en cours (cahier de refonte, 3.3) ----------
+   Anneau de progression = seul élément "vivant" de cette page (Apple Fitness/goal-gradient
+   effect) + une tuile secondaire. Fond plat partout, comme sur le bento de l'Accueil. */
+.fh-bento{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-top:16px}
+.fh-ring{width:84px;height:84px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(var(--azur-l) calc(var(--pc)*1%), var(--surface-2) 0)}
+.fh-ring i{display:flex;width:66px;height:66px;margin:9px;border-radius:50%;background:var(--surface);
+  flex-direction:column;align-items:center;justify-content:center;font-style:normal}
+.fh-ring i b{font-size:1.1rem;font-weight:800;color:var(--tx);line-height:1.1}
+.fh-ring i span{font-size:.56rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em}
+.fh-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.fh-tile{background:var(--surface-2);border:1px solid var(--bd);border-radius:var(--r-md);padding:8px 12px}
+.fh-tile .ht-k{font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.fh-tile .ht-v{font-size:.92rem;font-weight:800;color:var(--tx);margin-top:2px}
 .focus-h3{font-size:.95rem;font-weight:800;margin:24px 0 10px;display:flex;align-items:center;gap:7px}
 .stat-strip{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .stat-chip{flex:1 1 90px;background:var(--surface-2);border:1px solid var(--bd);border-radius:var(--r-sm);

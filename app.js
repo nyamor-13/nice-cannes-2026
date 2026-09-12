@@ -494,10 +494,19 @@ function renderFocusPage(elId,weekNum,isCurrent){
         </div>
         <div class="focus-title">Semaine ${w.n} — ${w.titre}</div>
         <div class="wd">${w.dates}</div>
-        ${isCurrent?`
-          <div class="bar" style="margin-top:14px"><i style="width:${pc}%"></i></div>
-          <div class="gsub"><span><b style="color:var(--tx)">${ok}</b>/${tot} séances faites</span><span>${ws.km} km prévus</span></div>
-        `:`<div class="co co-i" style="margin-top:14px;margin-bottom:0">Cette semaine n'a pas encore commencé — plan indicatif, tu pourras l'ajuster selon ta forme le moment venu.</div>`}
+        ${isCurrent?(()=>{
+          // Bento réduit à 2 tuiles (cahier de refonte, 3.3) : l'anneau de progression est le seul
+          // élément "vivant" de cette page (change chaque jour) — le texte "objectif de la semaine"
+          // reste hors bento, en pleine largeur, juste en dessous (inchangé).
+          const streak=pilierStreak();
+          return `<div class="fh-bento">
+            <div class="fh-ring" style="--pc:${pc}"><i><b>${ok}/${tot}</b><span>séances</span></i></div>
+            <div class="fh-side">
+              <div class="fh-tile"><div class="ht-k">Km prévus</div><div class="ht-v">${ws.km} km</div></div>
+              ${streak>=2?`<div class="fh-tile"><div class="ht-k">Régularité</div><div class="ht-v" style="color:var(--corail)">🔥 ${streak} sem.</div></div>`:""}
+            </div>
+          </div>`;
+        })():`<div class="co co-i" style="margin-top:14px;margin-bottom:0">Cette semaine n'a pas encore commencé — plan indicatif, tu pourras l'ajuster selon ta forme le moment venu.</div>`}
       </div>
 
       <div class="stat-strip">
