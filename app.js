@@ -328,7 +328,7 @@ function renderHome(){
   const nextN=curWeek+1;
   const wNext=SEMAINES.find(x=>x.n===nextN);
 
-  renderHomeSynthese(wCur,okCur,pcCur);
+  renderHomeSynthese(wCur);
 
   g("focusCards").innerHTML=`
     <button class="focus-card nav-link" data-p="semaine-cours">
@@ -370,65 +370,98 @@ function renderHome(){
 }
 
 /* ============================================================
+   NARRATION PARTAGÉE — forme, grand défi à venir, confiance objectif,
+   focus du moment. Utilisée par "Où tu en es" (Accueil) et "Où j'en
+   suis" (Progression) : même logique, formulations différentes selon
+   le contexte de la page. Volontairement pauvre en chiffres bruts dans
+   le texte — les chiffres vivent dans les indicateurs juste en dessous,
+   le texte dit ce qu'ils signifient, pas ce qu'ils valent (demande de
+   Romain, 12 sept).
+   ============================================================ */
+// Verdict qualitatif de forme (TSB) — mêmes seuils que renderForme(), reformulés en une phrase
+// courte réutilisable dans une narration plutôt que dans une carte dédiée.
+function formeLabel(){
+  const last=HEBDO[HEBDO.length-1];
+  if(last.tsb==null) return {txt:"en cours d'installation",cls:"var(--azur-l)"};
+  if(last.tsb>5) return {txt:"frais, de la marge sous le capot",cls:"var(--vert)"};
+  if(last.tsb>-10) return {txt:"en charge normale, ni trop frais ni cramé",cls:"var(--azur-l)"};
+  if(last.tsb>-18) return {txt:"fatigue qui s'accumule, à surveiller",cls:"var(--corail)"};
+  return {txt:"fatigue significative, signal rouge",cls:"var(--rouge)"};
+}
+// Le grand rendez-vous à venir : le semi en solo (S8) et le pic à 30 km (S10) sont les deux vrais
+// juges de paix du bloc, bien avant le marathon lui-même — les garder en tête dès le début plutôt
+// que de ne les découvrir qu'en semaine 7. Le message glisse automatiquement vers le prochain
+// jalon pertinent au fil des semaines.
+function nextChallengeTxt(){
+  if(curWeek<=7) return `Le vrai juge de paix arrive en deux temps : le <b>semi en solo</b> mi-octobre dira où en est vraiment le chrono, puis les <b>30 km</b> de la semaine 10 seront la répétition générale du jour J.`;
+  if(curWeek===8) return `Cette semaine, c'est le <b>semi en solo</b> qui parle — son chrono validera ou ajustera l'objectif ${META.objectif.plan}.`;
+  if(curWeek<=9) return `Le semi a donné sa réponse — reste la montée vers les <b>30 km</b> de la semaine 10, le vrai pic du bloc.`;
+  if(curWeek===10) return `C'est la semaine du <b>pic à 30 km</b> — la plus grosse séance de toute la préparation. Si elle passe, le marathon est en très bonne voie.`;
+  if(curWeek<=11) return `Le pic est passé — il ne reste qu'à <b>affûter</b> sans rien perdre de ce qui a été construit.`;
+  return `C'est la semaine du <b>marathon</b>. Le travail est fait, il ne reste qu'à le restituer.`;
+}
+// Confiance dans l'atteinte de l'objectif — jamais une prédiction sèche : toujours conditionnée à
+// la poursuite du plan. Le potentiel physiologique (Riegel/Garmin) est une chose, l'exécuter sur
+// la durée en est une autre — c'est exactement la nuance que le texte doit porter. Priorité aux
+// signaux qui doivent tempérer un optimisme prématuré avant de conclure positivement.
+// Adhérence au plan JUSQU'ICI — sur les semaines déjà closes (n<curWeek) uniquement, jamais sur
+// les 12 semaines totales : S.fait/S.tot mélangerait des séances pas encore arrivées et
+// plafonnerait mécaniquement autour de curWeek/12 même à exécution parfaite (bug trouvé le
+// 12 sept en relisant le texte généré semaine 4 : "l'exécution doit remonter" alors que 4/7
+// séances de la semaine étaient déjà cochées un samedi — le calcul jugeait tout le plan, pas ce
+// qui pouvait déjà être fait).
+function adherenceSoFar(){
+  const closed=SEMAINES.filter(w=>w.n<curWeek);
+  if(!closed.length) return 1;
+  let tot=0,fait=0;
+  closed.forEach(w=>w.s.forEach((s,i)=>{ tot++; if(isDone(w,s,i)) fait++; }));
+  return tot?fait/tot:1;
+}
+function confidenceTxt(){
+  const adherence=adherenceSoFar();
+  const last=HEBDO[HEBDO.length-1];
+  const weeksLeft=Math.max(0,12-curWeek);
+  const gapMin=Math.round((timeToSec(GARMIN.predictions.marathon)-hToSec(META.objectif.plan))/60);
+  if(curWeek<=3) return `Trop tôt pour se prononcer sur l'objectif — ces premières semaines posent le socle, la vraie tendance se lira à partir de la mi-bloc.`;
+  if(adherence<0.7) return `Le plan mène à <b>${META.objectif.plan}</b> sur le papier, mais c'est l'exécution qui doit remonter en premier — le potentiel ne suffit pas si les séances sautent.`;
+  if(last.tsb!=null && last.tsb<-18) return `La trajectoire va dans le bon sens, mais la fatigue actuelle est un signal à ne pas ignorer — un objectif tenu sur un corps cassé n'en est pas un.`;
+  if(gapMin>20) return `L'écart avec <b>${META.objectif.plan}</b> est encore réel, mais c'est exactement ce que ${weeksLeft>0?`les ${weeksLeft} semaines restantes sont`:"la fin du bloc est"} chargées de combler — rien d'alarmant à ce stade.`;
+  return `Si le plan continue d'être tenu comme il l'a été jusqu'ici, <b>${META.objectif.plan}</b> est un objectif crédible — la régularité déjà démontrée est le meilleur signal disponible.`;
+}
+// Focus du moment — dérivé de la vraie prochaine séance non cochée de la semaine, jamais un
+// conseil générique. La fatigue extrême prend le pas sur tout le reste : peu importe ce qui est
+// prévu, la priorité devient la récup.
+function nextFocusTxt(wCur){
+  const last=HEBDO[HEBDO.length-1];
+  if(last.tsb!=null && last.tsb<-18) return `Priorité à la récup cette semaine — la forme est dans le rouge, ce n'est pas le moment d'ajouter de la fatigue évitable.`;
+  const idx=wCur.s.findIndex((s,i)=>!isDone(wCur,s,i));
+  if(idx===-1) return `Semaine bouclée côté séances — profite du repos avant la suite, il compte tout autant que l'effort.`;
+  const a=wCur.s[idx].a;
+  if(a==="sl"||a==="sl_am") return `Focus sur la sortie longue à venir : arrive frais, c'est elle qui construit le plus.`;
+  if(["vma_court","vma_long","vo2max","seuil","seuil_2000","interval_1000"].includes(a)) return `Focus sur la fraîcheur avant la séance de qualité qui arrive — le bénéfice dépend de la vitesse réellement tenue, pas de la fatigue accumulée avant.`;
+  if(a==="cotes") return `Focus sur les côtes à venir : ménage un peu mollets et tendons d'Achille dans les jours autour.`;
+  if(a==="renfo_a"||a==="renfo_b") return `Focus sur le renfo prévu — c'est le complément qui manque le plus à la préparation en ce moment, ne le saute pas.`;
+  if(a==="repos"||a==="off") return `Focus sur le repos prévu — vraiment rien à faire, c'est pendant ces jours-là que le corps encaisse.`;
+  return `Garde le cap — rien de particulier à ajuster aujourd'hui.`;
+}
+
+/* ============================================================
    RENDU — SYNTHÈSE HOME (100 % calculée à chaque chargement,
    jamais de texte figé — c'est le point qui manquait)
    ============================================================ */
-function renderHomeSynthese(wCur,okCur,pcCur){
+function renderHomeSynthese(wCur){
   const el=g("homeSynthese"); if(!el) return;
-  const H=HEBDO, last=H[H.length-1];
-  const d0=new Date(last.lundi+"T00:00:00"), d1=new Date(d0); d1.setDate(d1.getDate()+6);
-  const rangeTxt=`${d0.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})} – ${d1.toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}`;
-
+  const forme=formeLabel();
   const daysToRace=Math.max(0,Math.ceil((RACE-NOW)/864e5));
-  const pcPlan=Math.round(S.fait/S.tot*100);
-  const kmFait=Math.round(S.km_fait), kmPrevu=Math.round(S.km_prevu);
-
-  const tEff=trend(H.map(x=>x.eff));
-  const dernier=lastAct();
-
-  // Le badge croise deux signaux frais : la tendance d'efficience ET la forme (TSB) du modèle
-  // charge/fatigue — pas juste l'efficience seule, pour que le statut affiché change plus souvent
-  // et reflète mieux "comment tu es" au moment où tu regardes la page.
-  let badge,badgeTxt;
-  if(last.tsb!=null && last.tsb<-12){badge="var(--rouge)";badgeTxt="🔴 Fatigue à surveiller";}
-  else if(tEff && tEff.pct>3){badge="var(--vert)";badgeTxt="🟢 En progression";}
-  else if(tEff && tEff.pct<-8){badge="var(--corail)";badgeTxt="🟠 À surveiller";}
-  else if(last.tsb!=null && last.tsb>5){badge="var(--vert)";badgeTxt="🟢 Frais, de la marge";}
-  else {badge="var(--azur-l)";badgeTxt="🔵 Stable";}
-
-  const effTxt=tEff
-    ? `${tEff.pct>0?"en hausse":"en baisse"} de ${Math.abs(tEff.pct).toFixed(0)} % sur les 3 dernières semaines`
-    : null;
-
-  const footingHome=footingStats(last.lundi);
-  const allureAlerte=!footingHome
-    ? `pas de footing pur cette semaine (que de la qualité) — rien à évaluer sur la récup.`
-    : footingHome.allure_min<5.9
-    ? `<span style="color:var(--soleil)">⚠️ tes footings (hors qualité) tournent à ${footingHome.allure}/km — toujours trop rapide, vise 6:00-6:30/km.</span>`
-    : `tes footings (hors qualité) tournent à ${footingHome.allure}/km, plus proche de la Z1 cible — continue.`;
-
-  const pred=GARMIN.predictions.marathon.slice(0,4).replace(':','h');
-  const objectifTxt=META.objectif.plan;
-
-  const dernierTxt=dernier
-    ? `Ta dernière activité, ${jourLong(dernier.date).toLowerCase()} — <b>${dernier.nom}</b>${dernier.km?` : <b>${dernier.km} km</b> à ${dernier.allure}/km${dernier.fc?` (${dernier.fc} bpm)`:""}`:dernier.duree_min?` : ${Math.round(dernier.duree_min)} min`:""}.`
-    : "";
 
   el.innerHTML=`
-  <div class="co co-i" style="border-color:${badge}">
-    <b class="t" style="color:${badge}">${badgeTxt}</b>
-    ${dernierTxt}
+  <div class="co co-i" style="border-color:${forme.cls}">
+    <b class="t" style="color:${forme.cls}">Semaine ${wCur.n}/12 · ${daysToRace} jours avant le marathon</b>
+    Forme actuelle : <b style="color:${forme.cls}">${forme.txt}</b>. ${nextChallengeTxt()}
     <br><br>
-    Semaine <b>${wCur.n}</b>/12 · <b>${daysToRace} jours</b> avant le marathon. <b>${okCur}/${wCur.s.length}</b> séances
-    cochées cette semaine, <b>${pcPlan} %</b> du plan validé au total (<b>${kmFait}</b> km sur ${kmPrevu} prévus).
+    ${confidenceTxt()}
     <br><br>
-    Semaine du ${rangeTxt} : <b>${last.km} km</b> en ${last.sorties} sorties, dont
-    <b>${last.longest} km</b> en sortie longue à ${last.allure}/km${last.fc?` (FC moy. ${last.fc} bpm)`:""}.
-    Efficience actuelle : <b>${last.eff??"—"}</b> m/battement${effTxt?`, ${effTxt}`:" (encore trop peu de semaines avec FC pour dégager une tendance)"}.
-    Allure de récup (footings) : ${allureAlerte}
-    <br><br>
-    Côté Garmin, la prédiction marathon actuelle est de <b>${pred}</b> pour un objectif fixé à <b>${objectifTxt}</b>.
-    Cap de la semaine : <b>${wCur.titre}</b>.
+    👉 ${nextFocusTxt(wCur)}
   </div>`;
 }
 
@@ -637,68 +670,37 @@ function renderCelebration(){
   el.dataset.seenKey=cel.seenKey;
   el.style.display="";
 }
-const GAIN_BY_TYPE={
-  build:"la charge continue de monter — c'est ce qui construit le plafond du 8 novembre",
-  peak:"c'est le pic de toute la préparation, le levier le plus lourd du plan",
-  taper:"on sécurise ce qui est acquis, sans plus rien risquer",
-  race:"le jour où tout ce travail se transforme en chrono",
-};
+// "Où j'en suis" (Progression) : même socle narratif que l'Accueil (forme/défi/confiance), mais
+// enrichi des tendances des indicateurs clés (kpiDefs() est la même source que la grille juste en
+// dessous — jamais de logique dupliquée). Volontairement qualitatif : la phrase dit ce que la
+// tendance signifie, pas sa valeur exacte, pour donner envie d'aller voir le chiffre en dessous
+// plutôt que de le préempter (demande de Romain, 12 sept).
+function trendQual(def,goodTxt,badTxt,flatTxt){
+  if(!def||!def.t) return flatTxt;
+  return def.t.good?goodTxt:badTxt;
+}
 function renderProgressSynthese(){
   const el=g("progressSynthese"); if(!el) return;
-  const pcSe=Math.round(S.fait/S.tot*100), pcKm=Math.round(S.km_fait/S.km_prevu*100);
-  const longestRecord=Math.max(...HEBDO.map(w=>w.longest));
-  const lastRun=lastAct("run");
+  const wCur=SEMAINES.find(x=>x.n===curWeek);
+  const forme=formeLabel();
+  const kpis=kpiDefs();
+  const pick=k=>kpis.find(x=>x.key===k);
   const streak=pilierStreak();
 
-  let slTxt;
-  if(longestRecord<15) slTxt="tes sorties longues démarrent tout juste — l'essentiel de la progression vers 30 km est encore devant toi.";
-  else if(longestRecord<22) slTxt=`tu commences à sentir le format long (<b>${longestRecord} km</b> en record), mais le vrai test arrive avec la montée vers 27-30 km.`;
-  else if(longestRecord<28) slTxt=`tu abordes les distances qui comptent vraiment (<b>${longestRecord} km</b> en record) — le pic à 30 km est en vue.`;
-  else slTxt=`le pic de volume long est atteint ou presque (<b>${longestRecord} km</b>) — la suite, c'est consolider puis affûter.`;
-
-  let qualTot=0,qualDone=0;
-  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{
-    const A=s.a?ARCHETYPES[s.a]:null;
-    if(A&&QUAL_FAM.includes(A.fam)){ qualTot++; if(isDone(w,s,i)) qualDone++; }
-  }));
-  let qualTxt;
-  if(qualDone===0) qualTxt="les séances de qualité (VMA, seuil, côtes) viennent tout juste de démarrer.";
-  else if(qualDone<qualTot*0.4) qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité faites — ça commence à élever ton plafond aérobie.`;
-  else if(qualDone<qualTot*0.8) qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité déjà dans les jambes — le travail de fond est bien engagé.`;
-  else qualTxt=`<b>${qualDone}/${qualTot}</b> séances de qualité faites — l'essentiel du travail d'intensité est derrière toi.`;
-
-  let renfoTot=0,renfoDone=0;
-  SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.k==="strength"){ renfoTot++; if(isDone(w,s,i)) renfoDone++; } }));
-
-  const objSec=hToSec(META.objectif.plan);
-  const predSec=timeToSec(GARMIN.predictions.marathon);
-  const gapMin=Math.round((predSec-objSec)/60);
-  const gapTxt=gapMin>0
-    ? `l'écart de <b>${gapMin} minutes</b> qui te sépare aujourd'hui de <b>${META.objectif.plan}</b> est exactement ce que la sortie longue, le seuil et le renfo sont chargés de combler d'ici le 8 novembre — chaque semaine cochée grignote une part de ces ${gapMin} minutes, pas juste une case.`
-    : `tes données actuelles sont déjà sous l'objectif de <b>${META.objectif.plan}</b> — la fin du bloc sert à sécuriser cette avance, pas à en gagner davantage.`;
-
-  const wNext=SEMAINES[curWeek], wNext2=SEMAINES[curWeek+1];
-  const nextTxt=[wNext,wNext2].filter(Boolean).map(w=>
-    `<b>S${w.n} — ${w.titre}</b>${GAIN_BY_TYPE[w.type]?` (${GAIN_BY_TYPE[w.type]})`:""}`
-  ).join(", puis ");
-
-  const lastRunTxt=lastRun
-    ?`Ta dernière sortie, ${jourLong(lastRun.date)} : <b>${lastRun.allure}/km</b>${lastRun.fc?` à <b>${lastRun.fc} bpm</b>`:""} sur <b>${lastRun.km} km</b>.`
-    :"";
+  const effPhrase=trendQual(pick("eff"),"l'efficience progresse","l'efficience marque le pas","l'efficience manque encore de recul pour dégager une tendance");
+  const slAllurePhrase=trendQual(pick("sl_allure_min"),"l'allure sur sortie longue s'améliore","l'allure sur sortie longue ne bouge pas encore","pas encore assez de sorties longues comparables pour juger l'allure");
+  const fcPhrase=trendQual(pick("fc_footing"),"le cœur commence à mieux s'adapter à l'effort facile","la FC à l'effort facile ne baisse pas encore","pas encore assez de footings mesurés pour juger l'adaptation cardiaque");
 
   el.innerHTML=`
   <div class="co co-g">
-    <b>${Math.round(S.km_fait)} km</b> parcourus en <b>${S.fait}</b> séances depuis le 17 août — un socle qui ne se discute pas,
-    quoi qu'il arrive en fin de plan.${streak>=2?` <b>${streak}</b> semaines de suite sans sauter la sortie longue : c'est exactement la
-    régularité qui construira les 30 km de la semaine 10.`:""}
+    <b class="t">Forme actuelle : <span style="color:${forme.cls}">${forme.txt}</span></b>
+    Trois signaux à suivre en ce moment : ${effPhrase}, ${slAllurePhrase}, et ${fcPhrase} — le détail
+    de chacun, avec sa vraie valeur et son historique, est juste en dessous.${streak>=2?` Autre signal qui
+    ne trompe pas : <b>${streak}</b> semaines de suite sans sauter la sortie longue.`:""}
     <br><br>
-    ${lastRunTxt}
+    ${nextChallengeTxt()}
     <br><br>
-    Côté sortie longue, ${slTxt} Côté intensité, ${qualTxt} Le renfo suit avec <b>${renfoDone}/${renfoTot}</b> séances faites —
-    c'est le complément unilatéral qui manquait avant le bloc (leg press une jambe, fentes bulgares).
-    <br><br>
-    ${nextTxt?`À venir : ${nextTxt}.<br><br>`:""}
-    Et le chiffre qui compte : ${gapTxt}
+    ${confidenceTxt()}
   </div>`;
 }
 function renderGauges(){
