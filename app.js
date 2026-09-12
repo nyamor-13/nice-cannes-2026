@@ -1786,9 +1786,6 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(filter!=="all") document.querySelectorAll(".wk").forEach(w=>w.classList.add("open"));
     applyFilter();
   });
-  g("rst").onclick=()=>{if(confirm("Effacer toutes tes saisies (cases cochées, formes, ressentis) ?")){
-    ST={}; save(); location.reload();
-  }};
 });
 
 /* ---------- SYNCHRONISATION MANUELLE ---------- */
@@ -1818,8 +1815,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 function boot(){
   initData();
   buildNav();
-  // Actions réservées à l'owner (sync manuelle, reset des saisies) : masquées pour un viewer,
-  // pas seulement désactivées — un viewer n'a aucune raison de savoir que ces boutons existent.
+  // Action réservée à l'owner (sync manuelle) : masquée pour un viewer, pas seulement
+  // désactivée — un viewer n'a aucune raison de savoir que ce bouton existe.
   document.body.classList.toggle("viewer-mode",!isOwner());
   tick();
   renderHome();
@@ -1849,7 +1846,7 @@ function boot(){
 }
 // Rôle de la personne connectée ({email,role:"owner"|"viewer"}), résolu une fois pour toutes au
 // démarrage — jamais recalculé ailleurs. `isOwner()` est LE point de vérité côté UI pour savoir
-// s'il faut afficher les actions d'écriture (cases à cocher, forme, notes, sync, reset...). Ça ne
+// s'il faut afficher les actions d'écriture (cases à cocher, forme, notes, sync...). Ça ne
 // remplace pas firestore.rules (seule vraie barrière), ça évite juste d'afficher des contrôles
 // qu'un viewer ne pourrait de toute façon pas utiliser.
 window.CURRENT_ACCESS=null;

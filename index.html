@@ -56,8 +56,8 @@ svg{width:19px;height:19px;flex:0 0 auto}
   border-radius:var(--r-md);padding:11px;font-size:.86rem;cursor:pointer}
 .auth-error{color:var(--rouge);font-size:.8rem;min-height:1.2em;margin-top:12px}
 .drawer-account{padding:8px 14px;font-size:.76rem;color:var(--tx3);border-top:1px solid var(--bd);margin-top:6px}
-/* Actions réservées à l'owner (sync, reset) — voir boot() dans app.js */
-body.viewer-mode #syncIconBtn,body.viewer-mode #rst{display:none !important}
+/* Action réservée à l'owner (sync) — voir boot() dans app.js */
+body.viewer-mode #syncIconBtn{display:none !important}
 
 /* ---------- SHELL : drawer + topbar + main ---------- */
 .app-shell{display:flex;min-height:100vh}
@@ -545,7 +545,6 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
     <div class="drawer-footer">
       <div class="drawer-maj" id="drawerMaj"></div>
       <div class="drawer-account" id="drawerAccount"></div>
-      <button class="drawer-reset" id="rst">↺ Réinitialiser mes saisies</button>
       <button class="drawer-reset" id="authSignOutBtn2">↪ Se déconnecter</button>
     </div>
   </nav>
