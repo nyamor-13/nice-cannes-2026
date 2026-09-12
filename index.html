@@ -218,6 +218,16 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
 .co-v{background:rgba(45,212,191,.08);border-color:var(--vert)}    .co-v b.t{color:var(--vert)}
 .co-p{background:rgba(139,92,246,.09);border-color:var(--violet)}  .co-p b.t{color:#b79bf7}
 
+/* Célébration de jalon/record (cahier de refonte, 3.1/3.2) — même famille ".co" flat que les
+   autres encarts, jamais de dégradé ni de verre dépoli même ici. Juste plus affirmée (accent
+   chaud, texte plus grand) pour marquer le coup. */
+.co-cel{background:rgba(251,133,0,.13);border-color:var(--corail);position:relative;padding-right:38px;
+  animation:cel-in .3s ease-out}
+.co-cel b.t{color:var(--corail);font-size:1.05rem}
+.cel-close{position:absolute;top:12px;right:10px;background:none;border:0;color:var(--tx3);
+  font-size:.95rem;line-height:1;cursor:pointer;padding:6px}
+@keyframes cel-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
 /* ZONES */
 .zone{background:var(--surface);border:1px solid var(--bd);border-top:3px solid var(--zc);border-radius:var(--r-md);padding:14px 16px}
 .zbadge{background:var(--zc);color:#0a0f16;font-weight:800;font-size:.72rem;padding:2px 8px;border-radius:6px}
@@ -535,6 +545,11 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
 
       <!-- ═══════ ACCUEIL ═══════ -->
       <section class="page on" id="page-accueil"><div class="wrap">
+        <div class="co co-cel" id="celebration" style="display:none">
+          <button class="cel-close" id="celebrationClose" aria-label="Fermer">✕</button>
+          <b class="t" id="celebrationLabel"></b>
+          <div id="celebrationDetail"></div>
+        </div>
         <div class="hero">
           <div class="kick">Marathon des Alpes-Maritimes</div>
           <h1>Nice&nbsp;→&nbsp;Cannes</h1>

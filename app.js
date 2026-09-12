@@ -572,6 +572,68 @@ function pilierStreak(){
   }
   return streak;
 }
+// Détection de célébration (cahier de refonte, 3.2) — un seul déclencheur à la fois, jamais plus
+// (règle anti-inflation), par ordre de priorité : sortie longue > efficience > temps en côte >
+// allure > jalon de streak. Jamais sur les 2 premières semaines de collecte d'une métrique (pas
+// d'historique pour comparer = tout serait "record"). Persisté dans localStorage pour ne jamais
+// re-montrer la même célébration deux fois (clé par type + semaine, voir CELEBRATION_KEY).
+function detectCelebration(){
+  const H=HEBDO, last=H[H.length-1];
+  const prior=H.slice(0,-1);
+  const candidates=[];
+
+  if(prior.length>=2){
+    const priorMax=Math.max(...prior.map(w=>w.longest||0));
+    if(last.longest>priorMax) candidates.push({type:"longest",priority:1,
+      label:"🏅 Nouveau record de sortie longue !",
+      detail:`${last.longest} km — ton record précédent était ${priorMax} km.`});
+  }
+  const priorEff=prior.filter(w=>w.eff!=null);
+  if(priorEff.length>=2 && last.eff!=null){
+    const priorMaxEff=Math.max(...priorEff.map(w=>w.eff));
+    if(last.eff>priorMaxEff) candidates.push({type:"eff",priority:2,
+      label:"🏅 Nouveau record d'efficience !",
+      detail:`${last.eff} m par battement — le meilleur depuis le début du suivi.`});
+  }
+  const priorIncline=prior.filter(w=>w.incline_min!=null);
+  if(priorIncline.length>=2 && last.incline_min!=null){
+    const priorMaxIncline=Math.max(...priorIncline.map(w=>w.incline_min));
+    if(last.incline_min>priorMaxIncline) candidates.push({type:"incline_min",priority:3,
+      label:"🏅 Nouveau record de temps en côte !",
+      detail:`${last.incline_min} min à ≥1 % — le meilleur depuis le début du suivi.`});
+  }
+  // Allure sortie longue : éligible seulement comparée à une sortie longue déjà enregistrée d'une
+  // distance comparable ou plus courte (sinon un footing court et rapide "bat" un record qui n'en
+  // est pas un — allure et distance sont mécaniquement liées).
+  const priorSlAllure=prior.filter(w=>w.sl_allure_min!=null && w.longest<=last.longest);
+  if(priorSlAllure.length>=2 && last.sl_allure_min!=null){
+    const bestPriorAllure=Math.min(...priorSlAllure.map(w=>w.sl_allure_min));
+    if(last.sl_allure_min<bestPriorAllure) candidates.push({type:"sl_allure",priority:4,
+      label:"🏅 Nouveau record d'allure sur sortie longue !",
+      detail:`${last.sl_allure} /km sur ${last.longest} km — plus rapide qu'aucune sortie longue de distance comparable jusqu'ici.`});
+  }
+  const streak=pilierStreak();
+  if([2,4,8,12].includes(streak)) candidates.push({type:`streak${streak}`,priority:5,
+    label:`🔥 ${streak} semaines d'affilée !`,
+    detail:"Sortie longue faite, semaine après semaine — exactement la régularité qui construira le jour J."});
+
+  if(!candidates.length) return null;
+  candidates.sort((a,b)=>a.priority-b.priority);
+  const winner=candidates[0];
+  const seenKey=`celebration-seen-${winner.type}-${last.lundi}`;
+  if(localStorage.getItem(seenKey)) return null;
+  winner.seenKey=seenKey;
+  return winner;
+}
+function renderCelebration(){
+  const el=g("celebration"); if(!el) return;
+  const cel=detectCelebration();
+  if(!cel){ el.style.display="none"; return; }
+  g("celebrationLabel").textContent=cel.label;
+  g("celebrationDetail").textContent=cel.detail;
+  el.dataset.seenKey=cel.seenKey;
+  el.style.display="";
+}
 const GAIN_BY_TYPE={
   build:"la charge continue de monter — c'est ce qui construit le plafond du 8 novembre",
   peak:"c'est le pic de toute la préparation, le levier le plus lourd du plan",
@@ -1681,6 +1743,12 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#syncIconBtn")){ openSync(); return; }
   if(e.target.closest("#syncCloseBtn")){ closeSync(); return; }
   if(e.target.closest("#syncScrim")){ closeSync(); return; }
+  if(e.target.closest("#celebrationClose")){
+    const el=g("celebration");
+    if(el.dataset.seenKey) localStorage.setItem(el.dataset.seenKey,"1");
+    el.style.display="none";
+    return;
+  }
 
   const se=e.target.closest(".se");
   if(se){
@@ -1750,6 +1818,7 @@ function boot(){
   document.body.classList.toggle("viewer-mode",!isOwner());
   tick();
   renderHome();
+  renderCelebration();
   renderFocusPage("focusCoursBody",curWeek,true);
   renderFocusPage("focusProchaineBody",curWeek+1,false);
   renderProgressSynthese();
