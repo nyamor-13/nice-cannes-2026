@@ -295,19 +295,22 @@ function nextSession(pred){
    ============================================================ */
 // Rangée bento secondaire sous le countdown (cahier de refonte, 3.3) : objectif toujours affiché,
 // streak seulement à partir de 2 semaines (sinon un "🔥 1" ne dit pas grand-chose et occuperait
-// une tuile pour rien), dernière activité si on en a une. Jamais plus de 3 tuiles — pas de scroll
-// horizontal sur mobile, et ça garde la hiérarchie "un hero, quelques tuiles" du bento.
+// une tuile pour rien), prédiction Garmin actuelle si dispo. Jamais plus de 3 tuiles — pas de
+// scroll horizontal sur mobile, et ça garde la hiérarchie "un hero, quelques tuiles" du bento.
+// Remplace l'ancienne 3ᵉ tuile "Dernière activité" (12 sept, retour de Romain) : la prédiction
+// donne un signal de progression day-to-day, la dernière sortie se retrouve de toute façon dans
+// "Ce que tu as réellement fait" sur la semaine en cours — redondant à cet endroit précis.
 function renderHeroRow(){
   const el=g("heroRow"); if(!el) return;
   const streak=pilierStreak();
-  const dernier=lastAct();
   const tiles=[
     {k:"Objectif",v:META.objectif.plan,cls:""},
   ];
   if(streak>=2) tiles.push({k:"Régularité",v:`🔥 ${streak} sem.`,cls:"streak"});
-  if(dernier){
-    const detail=dernier.km?`${dernier.km} km`:dernier.m?`${dernier.m} m`:dernier.nom;
-    tiles.push({k:"Dernière",v:detail,cls:""});
+  const pred=GARMIN?.predictions?.marathon;
+  if(pred){
+    const[h,m]=pred.split(":");
+    tiles.push({k:"Prédiction",v:`${+h}h${m}`,cls:""});
   }
   el.innerHTML=tiles.map(t=>`<div class="hero-tile ${t.cls}"><div class="ht-k">${t.k}</div><div class="ht-v">${t.v}</div></div>`).join("");
 }
