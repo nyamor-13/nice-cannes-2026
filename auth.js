@@ -39,20 +39,43 @@
     if (shell) shell.style.display = id === "app" ? "" : "none";
   }
 
+  // Redirection plutôt que popup : GitHub Pages envoie un en-tête
+  // Cross-Origin-Opener-Policy qui coupe la communication entre la fenêtre
+  // popup et la page d'origine (constaté en prod le 12/09 : Google validait
+  // la connexion dans la popup, mais l'app restait bloquée sur "Vérification
+  // de l'accès…" indéfiniment — la popup ne pouvait jamais transmettre son
+  // résultat). La redirection navigue la page entière vers Google puis la
+  // ramène ici, sans communication inter-fenêtres à faire passer : aucun
+  // en-tête ne peut la bloquer. On ne contrôle pas les en-têtes HTTP sur
+  // GitHub Pages (hébergement statique), donc pas d'autre réglage possible
+  // côté serveur pour sauver le popup.
   async function trySignIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const btn = document.getElementById("authSignInBtn");
     if (btn) { btn.disabled = true; btn.textContent = "Connexion…"; }
     try {
-      await auth.signInWithPopup(provider);
+      await auth.signInWithRedirect(provider);
+      // La ligne ci-dessus fait quitter la page vers Google : rien après ce
+      // point ne s'exécute dans ce chargement en cas de succès.
     } catch (e) {
       console.error("Connexion Google échouée", e);
       const err = document.getElementById("authError");
       if (err) err.textContent = "La connexion a échoué (" + (e.code || "erreur inconnue") + "). Réessaie.";
-    } finally {
       if (btn) { btn.disabled = false; btn.textContent = "Se connecter avec Google"; }
     }
   }
+
+  // Résultat de la redirection au retour de Google (voir trySignIn). N'agit
+  // que sur l'échec : le succès est déjà couvert par onAuthStateChanged
+  // ci-dessous, qui se déclenche de toute façon une fois la session Firebase
+  // rétablie. Sans ça, un échec pendant l'aller-retour Google (ex. consentement
+  // refusé) ne remonterait jamais à l'écran — juste un retour silencieux sur
+  // l'écran de connexion, sans explication.
+  auth.getRedirectResult().catch((e) => {
+    console.error("Connexion Google (retour de redirection) échouée", e);
+    const err = document.getElementById("authError");
+    if (err) err.textContent = "La connexion a échoué (" + (e.code || "erreur inconnue") + "). Réessaie.";
+  });
 
   function doSignOut() {
     auth.signOut();
