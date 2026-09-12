@@ -51,10 +51,7 @@ svg{width:19px;height:19px;flex:0 0 auto}
 .auth-spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--bd);border-top-color:var(--azur-l);
   margin:0 auto 16px;animation:auth-spin 0.8s linear infinite}
 @keyframes auth-spin{to{transform:rotate(360deg)}}
-.auth-google-btn{width:100%;background:var(--tx);color:#1a1a1a;border:0;border-radius:var(--r-md);
-  padding:13px;font-weight:700;font-size:.92rem;cursor:pointer}
-.auth-google-btn:disabled{opacity:.6;cursor:default}
-.auth-google-btn:hover:not(:disabled){filter:brightness(.95)}
+.auth-g-btn{display:flex;justify-content:center;min-height:44px}
 .auth-secondary-btn{width:100%;background:transparent;color:var(--tx2);border:1px solid var(--bd);
   border-radius:var(--r-md);padding:11px;font-size:.86rem;cursor:pointer}
 .auth-error{color:var(--rouge);font-size:.8rem;min-height:1.2em;margin-top:12px}
@@ -491,7 +488,26 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
   <div class="auth-box">
     <div class="auth-brand">Nice → Cannes<span>Marathon · 8 nov. 2026</span></div>
     <p>Suivi d'entraînement personnel — connexion requise.</p>
-    <button class="auth-google-btn" id="authSignInBtn">Se connecter avec Google</button>
+    <!-- Bouton Google natif (Google Identity Services) plutôt qu'un bouton custom
+         appelant signInWithPopup/signInWithRedirect : ces deux mécanismes Firebase
+         se sont révélés cassés en prod, chacun sur un navigateur différent (voir
+         auth.js pour le détail). Le bouton natif gère la connexion lui-même, sans
+         passer par le domaine Firebase — insensible aux deux problèmes rencontrés.
+         GSI scanne le DOM et initialise ces deux div dès que son script a chargé,
+         aucun appel JS de notre part n'est nécessaire. -->
+    <div id="g_id_onload"
+         data-client_id="98517277479-hf32negatm15qs0b0591fjjau2du239h.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false"></div>
+    <div class="auth-g-btn">
+      <div class="g_id_signin"
+           data-type="standard"
+           data-theme="filled_black"
+           data-size="large"
+           data-text="signin_with"
+           data-shape="rectangular"
+           data-logo_alignment="left"></div>
+    </div>
     <p class="auth-error" id="authError"></p>
   </div>
 </div>
@@ -708,6 +724,7 @@ svg .bar-hit.sel+rect{filter:brightness(1.15)}
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="auth.js"></script>
 <script src="data-cloud.js"></script>
 <script src="firebase-sync.js"></script>

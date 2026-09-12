@@ -39,46 +39,35 @@
     if (shell) shell.style.display = id === "app" ? "" : "none";
   }
 
-  // Redirection plutôt que popup : GitHub Pages envoie un en-tête
-  // Cross-Origin-Opener-Policy qui coupe la communication entre la fenêtre
-  // popup et la page d'origine (constaté en prod le 12/09 : Google validait
-  // la connexion dans la popup, mais l'app restait bloquée sur "Vérification
-  // de l'accès…" indéfiniment — la popup ne pouvait jamais transmettre son
-  // résultat). La redirection navigue la page entière vers Google puis la
-  // ramène ici, sans communication inter-fenêtres à faire passer : aucun
-  // en-tête ne peut la bloquer. On ne contrôle pas les en-têtes HTTP sur
-  // GitHub Pages (hébergement statique), donc pas d'autre réglage possible
-  // côté serveur pour sauver le popup.
-  async function trySignIn() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const btn = document.getElementById("authSignInBtn");
-    if (btn) { btn.disabled = true; btn.textContent = "Connexion…"; }
-    try {
-      await auth.signInWithRedirect(provider);
-      // La ligne ci-dessus fait quitter la page vers Google : rien après ce
-      // point ne s'exécute dans ce chargement en cas de succès.
-    } catch (e) {
+  // Bouton Google natif (Google Identity Services, chargé dans index.html)
+  // plutôt qu'un signInWithPopup/signInWithRedirect maison : les deux se sont
+  // révélés cassés en prod, chacun sur un navigateur différent —
+  // signInWithPopup bloqué par le Cross-Origin-Opener-Policy que GitHub Pages
+  // envoie par défaut (Chrome, 12/09), signInWithRedirect bloqué par la
+  // protection anti-tracking de Safari qui limite le stockage utilisé pendant
+  // l'aller-retour vers le domaine Firebase (12/09 également). Dans les deux
+  // cas la cause profonde est la même : Firebase fait transiter la connexion
+  // par son propre domaine (nice-cannes-2026.firebaseapp.com), différent de
+  // celui du site — et les navigateurs bloquent de plus en plus ce genre
+  // d'échange. Le bouton Google natif gère toute la connexion lui-même, sans
+  // jamais passer par ce domaine intermédiaire : insensible aux deux
+  // problèmes. Voir index.html (#g_id_onload/.g_id_signin) pour le bouton
+  // lui-même — GSI l'initialise seul, aucun appel JS de notre part.
+  window.handleCredentialResponse = function (response) {
+    const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+    firebase.auth().signInWithCredential(credential).catch((e) => {
       console.error("Connexion Google échouée", e);
       const err = document.getElementById("authError");
       if (err) err.textContent = "La connexion a échoué (" + (e.code || "erreur inconnue") + "). Réessaie.";
-      if (btn) { btn.disabled = false; btn.textContent = "Se connecter avec Google"; }
-    }
-  }
-
-  // Résultat de la redirection au retour de Google (voir trySignIn). N'agit
-  // que sur l'échec : le succès est déjà couvert par onAuthStateChanged
-  // ci-dessous, qui se déclenche de toute façon une fois la session Firebase
-  // rétablie. Sans ça, un échec pendant l'aller-retour Google (ex. consentement
-  // refusé) ne remonterait jamais à l'écran — juste un retour silencieux sur
-  // l'écran de connexion, sans explication.
-  auth.getRedirectResult().catch((e) => {
-    console.error("Connexion Google (retour de redirection) échouée", e);
-    const err = document.getElementById("authError");
-    if (err) err.textContent = "La connexion a échoué (" + (e.code || "erreur inconnue") + "). Réessaie.";
-  });
+    });
+  };
 
   function doSignOut() {
     auth.signOut();
+    // Sans ça, Google Identity Services peut resigner automatiquement le même
+    // compte au chargement suivant (One Tap silencieux) — après une
+    // déconnexion volontaire, on veut qu'un vrai clic soit nécessaire.
+    if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
   }
 
   // Un utilisateur "autorisé" est un utilisateur pour qui une vraie lecture
@@ -114,7 +103,6 @@
             resolve(access);
           });
         }),
-    signIn: trySignIn,
     signOut: doSignOut,
   };
 
@@ -124,7 +112,9 @@
     // Auth se lit vite). Le HTML part déjà correctement sur l'écran de chargement par défaut
     // (login/denied cachés en inline, loading visible via le CSS) — un appel ici écraserait un
     // vrai résultat déjà affiché et bloquerait l'app sur "Vérification de l'accès…" pour de bon.
-    document.getElementById("authSignInBtn")?.addEventListener("click", trySignIn);
+    // Le bouton de connexion lui-même n'a plus de handler ici : c'est le bouton
+    // Google natif (voir index.html) qui gère le clic, jusqu'à l'appel de
+    // window.handleCredentialResponse ci-dessus.
     document.getElementById("authSignOutBtn")?.addEventListener("click", doSignOut);
     document.getElementById("authSignOutBtn2")?.addEventListener("click", doSignOut);
     document.getElementById("authRetryBtn")?.addEventListener("click", () => location.reload());
