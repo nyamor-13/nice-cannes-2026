@@ -3,18 +3,19 @@
    Source : Strava (+ Garmin quand disponible)
    ============================================================ */
 
-window.MAJ = {"date": "2026-09-12T14:02:00", "source": "Strava", "garmin": true};
+window.MAJ = {"date": "2026-09-13T15:30:00", "source": "Strava", "garmin": true};
 
-window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}, {"date": "2026-09-11", "type": "swim", "nom": "Natation le matin", "duree_min": 38.8, "m": 1800}, {"date": "2026-09-12", "type": "swim", "nom": "Natation le matin", "duree_min": 36.9, "m": 1700}, {"date": "2026-09-12", "type": "run", "nom": "Course à pied le matin", "duree_min": 51.3, "km": 8.45, "allure": "6:05", "fc": 135.5}];
+window.ACTIVITES = [{"date": "2026-08-31", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.1, "km": 9.56, "allure": "5:08"}, {"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}, {"date": "2026-09-11", "type": "swim", "nom": "Natation le matin", "duree_min": 38.8, "m": 1800}, {"date": "2026-09-12", "type": "swim", "nom": "Natation le matin", "duree_min": 36.9, "m": 1700}, {"date": "2026-09-12", "type": "run", "nom": "Course à pied le matin", "duree_min": 51.3, "km": 8.45, "allure": "6:05", "fc": 135.5}, {"date": "2026-09-13", "type": "run", "nom": "Course à pied le matin", "duree_min": 113.3, "km": 20.01, "allure": "5:40", "fc": 137.6, "qual": true}];
 
 window.ANALYSES = {
  "w4s0": {"date": "2026-09-08", "conclusion": "conforme", "texte": "Séance faite à 79-95 % de la vitesse tapis cible (14,5 km/h), mais avec une FC montée à 97 % de FCmax (179 bpm) sur la dernière fraction — l'effort réel était conforme malgré une vitesse affichée en dessous de la cible. Le tapis semble mal calibré ou tu compenses par la foulée plutôt que la vitesse affichée. <b>Conclusion : aucun ajustement du plan</b> — l'archétype VO2max a été mis à jour pour prioriser la FC sur la vitesse affichée dans les prochaines séances de ce type."},
- "w4s3": {"date": "2026-09-10", "conclusion": "conforme", "texte": "Protocole réellement exécuté plus riche que celui prescrit par le plan (12 reprises progressives de 6 % à 8 % d'inclinaison à 10 km/h, au lieu des 8 × 1′30 prévus), récupérations de 1 min entre chaque. FC progressive et cohérente (121 → 160 bpm), ressenti \"ok\" rapporté. <b>Conclusion : aucun ajustement du plan</b> — c'est une variante personnelle plus complète que la cible, pas un écart à corriger."}
+ "w4s3": {"date": "2026-09-10", "conclusion": "conforme", "texte": "Protocole réellement exécuté plus riche que celui prescrit par le plan (12 reprises progressives de 6 % à 8 % d'inclinaison à 10 km/h, au lieu des 8 × 1′30 prévus), récupérations de 1 min entre chaque. FC progressive et cohérente (121 → 160 bpm), ressenti \"ok\" rapporté. <b>Conclusion : aucun ajustement du plan</b> — c'est une variante personnelle plus complète que la cible, pas un écart à corriger."},
+ "w4s6": {"date": "2026-09-13", "conclusion": "conforme", "texte": "20 km bouclés — nouveau record de distance (précédent : 16,4 km) — avec une vraie leçon de gestion : 9 km tranquilles avant le bloc à allure marathon, comme le prévoit l'archétype. Le bloc de 20′ visé a été tenu en durée (4 km à environ 5:00/km, contre 5:10-5:30/km ciblés) — plus rapide que la cible, mais la FC est restée maîtrisée (148 → 155 bpm, dans la zone allure marathon jusqu'au bout, jamais au seuil). Les 7 derniers kilomètres ont été gérés sous 140 bpm comme prévu — exactement la compétence recherchée pour ne pas subir la fin de course. <b>Conclusion : conforme, aucun ajustement du plan</b> — la vitesse un peu vive sur le bloc n'est pas un problème tant que la FC reste sous contrôle, c'est même un bon signal de réserve. Seul point à garder à l'œil sur les prochains blocs à allure marathon : viser plus précisément 5:10-5:30/km pour que l'automatisme se cale sur l'allure réelle du 8 novembre, pas sur une allure plus rapide qui ne sera pas tenable sur 42 km."}
 };
 
-window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOKA", "modele": "Clifton 11", "km": 65.1}};
+window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOKA", "modele": "Clifton 11", "km": 85.1}};
 
-window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:26", "10k": "45:47", "semi": "1:43:42", "marathon": "3:53:42"}, "sommeil": null, "vfc": null};
+window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:25", "10k": "45:43", "semi": "1:42:58", "marathon": "3:51:36"}, "sommeil": null, "vfc": null};
 
 // Détail nuit par nuit — exploration ponctuelle du 11 sept (pas un suivi en continu) : 6 nuits
 // réelles retrouvées sur Garmin mi/fin août (avant la pause du 9 sept), utilisées pour tester
@@ -327,28 +328,30 @@ window.HEBDO = [
  },
  {
   "lundi": "2026-09-07",
-  "km": 26.7,
-  "h": 3.86,
-  "dplus": 90,
-  "sorties": 3,
+  "km": 46.8,
+  "h": 5.75,
+  "dplus": 208,
+  "sorties": 4,
   "natations": 2,
   "renfo": 1,
-  "longest": 9.7,
-  "allure": "5:50",
-  "allure_min": 5.829,
-  "fc": 141.0,
-  "eff": 1.216,
+  "longest": 20.0,
+  "allure": "5:45",
+  "allure_min": 5.757,
+  "fc": 139.6,
+  "eff": 1.244,
   "nat_m": 3500,
-  "charge": 162,
-  "ctl": 27.1,
-  "atl": 32.5,
-  "tsb": -5.3,
-  "aero_min": 151,
+  "charge": 227,
+  "ctl": 28.0,
+  "atl": 37.1,
+  "tsb": -9.1,
+  "aero_min": 264,
   "anaero_min": 4,
   "incline_min": 21,
   "fc_footing": 135.5,
-  "eff_footing": 1.215
+  "eff_footing": 1.215,
+  "sl_allure_min": 5.662,
+  "sl_allure": "5:40"
  }
 ];
 
-window.TOTAUX = {"km": 599.3, "h": 58.4, "sorties": 60, "natations": 17};
+window.TOTAUX = {"km": 619.3, "h": 60.3, "sorties": 61, "natations": 17};
