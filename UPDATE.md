@@ -81,10 +81,17 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      `anaero_min` (Z4-Z5). Ne pas chercher à reconstituer ces champs pour les semaines passées où on
      n'a pas les tours — les laisser absents plutôt que d'inventer une valeur.
    - `sl_allure_min` / `sl_allure` : allure de la sortie longue de la semaine **uniquement**
-     (repérer dans `window.ACTIVITES` la course la plus longue de la semaine parmi celles qui ne
-     sont pas `qual:true`) — jamais la moyenne toutes-sorties, qui n'a pas de sens pour juger la
+     (repérer dans `window.ACTIVITES` la course la plus longue de la semaine, qu'elle soit
+     `qual:true` ou non) — jamais la moyenne toutes-sorties, qui n'a pas de sens pour juger la
      progression sur ce format précis (Romain l'a demandé le 10 sept, l'allure moyenne "toutes
      sorties" étant jugée peu informative). Absent si aucune sortie longue cette semaine.
+     ⚠️ **Règle corrigée le 13 sept** : exclure `qual:true` pour repérer "la sortie longue" est un
+     piège — une séance `sl_am` (sortie longue + bloc allure marathon) est justement marquée
+     `qual:true` par la règle ci-dessus sur le marquage des courses de qualité (elle contient un
+     bloc à allure marathon), donc l'exclure ferait manquer la vraie sortie longue et retomber sur
+     un simple footing plus court à sa place — ce qui n'a aucun sens pour cet indicateur. Le VMA/
+     seuil/côtes ne dépassant jamais la sortie longue en distance, prendre "la plus longue course
+     de la semaine" sans distinction de `qual` est sans ambiguïté et correct dans tous les cas.
    - `fc_footing` / `eff_footing` : FC moyenne et indice d'efficience calculés **uniquement sur les
      footings** de la semaine (mêmes activités que `footingStats()` dans `app.js` — `type:"run"`,
      `qual` absent ou `false`). Objectif : isoler l'adaptation cardiaque réelle de l'effet mécanique
