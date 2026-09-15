@@ -136,7 +136,13 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      projections sans qu'aucun changement de code ne soit nécessaire.
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
-   - VO2max : `connect.garmin.com/app/report/21/all/current`
+   - VO2max : `connect.garmin.com/app/report/21/all/current`. **Ajouter un point à
+     `GARMIN.vo2max_serie`** à chaque sync (`{"d":"<date du jour>","v":<valeur>}`), même si la
+     valeur est identique à la précédente — c'est justement la platitude de la série qui est
+     l'information (voir 15 sept : Garmin n'expose la valeur qu'en entier, jamais de décimale,
+     ni sur la page du jour ni dans l'historique complet sur 1 an, vérifié directement dans le
+     code de la page — inutile de chercher plus de précision, elle n'existe pas côté Garmin).
+     Ne jamais réécrire les points passés de cette série, seulement en ajouter un nouveau.
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
    - **FC repos : EN PAUSE jusqu'à fin septembre 2026** (demande explicite de Romain le 9 sept).
      Ne pas aller consulter `/app/heart-rate/...` pendant cette période, ni chercher à enrichir
@@ -160,7 +166,8 @@ window.ACTIVITES = [{"date":"AAAA-MM-JJ","type":"run","nom":"Course à pied le m
                      "duree_min":49.1,"km":9.56,"allure":"5:08"},
                     {"date":"AAAA-MM-JJ","type":"strength","nom":"Renfo","duree_min":60.0,
                      "exercices":[{"nom":"Leg Press","sets":["25 kg × 10","50 kg × 10"]}]}];
-window.GARMIN    = {"vo2max":52,"fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ","v":49}],
+window.GARMIN    = {"vo2max":52,"vo2max_serie":[{"d":"AAAA-MM-JJ","v":52}],
+                    "fc_repos":49,"fc_repos_serie":[{"d":"AAAA-MM-JJ","v":49}],
                     "predictions":{"5k":"","10k":"","semi":"","marathon":""},
                     "sommeil":null,"vfc":null};
 window.HEBDO     = [{"lundi":"AAAA-MM-JJ","km":0,"h":0,"dplus":0,"sorties":0,"natations":0,

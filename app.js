@@ -1238,6 +1238,18 @@ function renderAnalyse(){
   const fcLatest=fcVals.length?fcVals[fcVals.length-1]:null;
   const fcMin=fcVals.length?Math.min(...fcVals):null, fcMax=fcVals.length?Math.max(...fcVals):null;
 
+  // VO2max dans le temps (demande de Romain, 15 sept) : Garmin n'expose jamais de décimale, ni sur
+  // la valeur du jour ni dans son historique (vérifié directement dans la page) — inutile d'en
+  // afficher une, ce serait une fausse précision. On se contente de retenir un point par sync
+  // (GARMIN.vo2max_serie) pour que le jour où la valeur bouge, même d'un point, ce soit visible
+  // immédiatement sans changement de code. Pas d'effet de bord tant qu'elle ne bouge pas.
+  const vo2Serie=GARMIN.vo2max_serie||[];
+  const vo2First=vo2Serie.length?vo2Serie[0].v:null, vo2Latest=vo2Serie.length?vo2Serie[vo2Serie.length-1].v:null;
+  const vo2DateTxt=vo2Serie.length?new Date(vo2Serie[0].d+"T00:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"}):null;
+  const vo2Txt=vo2Serie.length<2?""
+    : vo2Latest===vo2First?` <span style="color:var(--tx3)">(stable depuis le ${vo2DateTxt})</span>`
+    : ` <span style="color:var(--vert)">(${vo2Latest>vo2First?"en hausse":"en baisse"} depuis le ${vo2DateTxt} : ${vo2First} → ${vo2Latest})</span>`;
+
   // renforcement
   let renfoTot=0,renfoDone=0;
   SEMAINES.forEach(w=>w.s.forEach((s,i)=>{ if(s.k==="strength"){ renfoTot++; if(isDone(w,s,i)) renfoDone++; } }));
@@ -1255,7 +1267,7 @@ function renderAnalyse(){
 
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil</b>
-  VO2max <b>${GARMIN.vo2max} ml/kg/min</b> — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
+  VO2max <b>${GARMIN.vo2max} ml/kg/min</b>${vo2Txt} — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
   ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
   <br><br>${lastRunTxt} Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
   <br><br>Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique

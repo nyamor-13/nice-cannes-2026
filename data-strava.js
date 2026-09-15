@@ -16,7 +16,7 @@ window.ANALYSES = {
 
 window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOKA", "modele": "Clifton 11", "km": 97.1}};
 
-window.GARMIN = {"vo2max": 52, "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:24", "10k": "45:41", "semi": "1:42:53", "marathon": "3:51:27"}, "sommeil": null, "vfc": null};
+window.GARMIN = {"vo2max": 52, "vo2max_serie": [{"d": "2026-09-15", "v": 52}], "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}], "predictions": {"5k": "21:24", "10k": "45:41", "semi": "1:42:53", "marathon": "3:51:27"}, "sommeil": null, "vfc": null};
 
 // Détail nuit par nuit — exploration ponctuelle du 11 sept (pas un suivi en continu) : 6 nuits
 // réelles retrouvées sur Garmin mi/fin août (avant la pause du 9 sept), utilisées pour tester
