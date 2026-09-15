@@ -20,6 +20,24 @@ c'est pour ça que seul `data-strava.js` est réécrit.
    Pour les nouvelles sorties de course, récupérer aussi `get_activity_performance`
    afin d'avoir la FC moyenne (utilisée pour l'indice d'efficience).
 
+   ⚠️ **Toujours vérifier aussi les commentaires que Romain a pu laisser sur ses séances dans
+   l'app** (ajouté le 13 sept, sur sa demande — ce n'est **pas automatique par défaut**, à faire
+   systématiquement même s'il ne le signale pas explicitement dans sa demande de sync). Ces
+   commentaires vivent dans Firestore, collection `state`, document `app`, champ
+   `st.w<numéro semaine>s<index séance>.note` (même format de clé que `sid()` dans `app.js`,
+   ex. `w4s6` = semaine 4, séance d'index 6 — comparer aux dates/index du plan pour savoir quelles
+   séances sont concernées par les nouvelles activités Strava du jour). Lecture directe via le
+   compte de service (même clé que `sync-to-firestore.py`) :
+   ```python
+   snap = db.collection("state").document("app").get()
+   st = snap.to_dict().get("st", {})
+   note = st.get("w4s6", {}).get("note")
+   ```
+   Ces commentaires donnent souvent le contexte le plus utile pour l'analyse d'adaptation
+   (structure exacte d'une séance, intention de pacing, ressenti) — plus riche que les seules
+   données Strava, à incorporer explicitement dans le texte de `window.ANALYSES` quand ils
+   éclairent une séance de qualité.
+
 2. **Recalculer `window.ACTIVITES`** (liste des activités individuelles réelles, pas seulement
    l'agrégat hebdo) — c'est ce qui permet d'afficher "Ce que tu as réellement fait" sur les pages
    Semaine en cours/prochaine et Plan complet, séance par séance, à côté du plan prévu.
