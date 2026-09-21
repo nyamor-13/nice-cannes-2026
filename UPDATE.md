@@ -127,13 +127,12 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      durée de chaque répétition à ≥1 %, **sans compter les récupérations à 0 %**). Sans ce détail
      communiqué par Romain, laisser le champ absent plutôt que de deviner un temps.
    - `sommeil_min` : minutes de sommeil par nuit, **moyenne de la semaine** — champ câblé côté app
-     depuis le 11 sept (indicateur "Sommeil" sur Progression, chip dans le détail hebdo) mais **à
-     laisser absent tant que Romain ne porte pas la montre en continu** (même statut que `fc_repos`,
-     voir étape 5 : la référence de vacances n'est pas fiable, ne pas deviner une valeur pour combler
-     le champ). Dès la reprise du port continu (attendue fin septembre / courant octobre) et la
-     récupération du sommeil via `/app/sleep/<date>` (étape 5), moyenner les nuits de la semaine et
-     alimenter ce champ — l'app affichera alors automatiquement l'historique, la tendance et les
-     projections sans qu'aucun changement de code ne soit nécessaire.
+     depuis le 11 sept (indicateur "Sommeil" sur Progression, chip dans le détail hebdo). **Actif
+     depuis le 21 sept** (port continu confirmé, voir étape 5) : moyenner les nuits de port continu
+     disponibles pour la semaine en cours et alimenter ce champ — l'app affiche automatiquement
+     l'historique, la tendance et les projections sans changement de code. Pour les toutes premières
+     semaines de port continu, la moyenne peut porter sur moins de 7 nuits (montre pas encore portée
+     tous les jours au tout début) — c'est normal, ne pas combler les nuits manquantes.
 
 5. **Garmin** (optionnel, best-effort) — si Chrome est ouvert et connecté, via l'extension :
    - VO2max : `connect.garmin.com/app/report/21/all/current`. **Ajouter un point à
@@ -144,17 +143,21 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      code de la page — inutile de chercher plus de précision, elle n'existe pas côté Garmin).
      Ne jamais réécrire les points passés de cette série, seulement en ajouter un nouveau.
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
-   - **FC repos : EN PAUSE jusqu'à fin septembre 2026** (demande explicite de Romain le 9 sept).
-     Ne pas aller consulter `/app/heart-rate/...` pendant cette période, ni chercher à enrichir
-     `fc_repos_serie`. Laisser `GARMIN.fc_repos_serie` tel quel dans le fichier (ne pas y toucher,
-     ne pas le vider) — l'app continue d'afficher les dernières valeurs connues, c'est voulu.
-     **Reprendre la collecte dès que Romain confirme qu'il porte sa montre en continu**
-     (attendu fin septembre / courant octobre) : à ce moment, recalculer `fc_repos` sur ses
-     2-3 premières semaines de port continu (vie normale, hors vacances) et reprendre l'alimentation
-     de `fc_repos_serie` jour par jour.
-   - À partir de la reprise du port continu : récupérer aussi le **sommeil** (`/app/sleep/<date>`)
-     et la **VFC** (`/app/hrv-status`), et les ajouter dans `window.GARMIN` (`sommeil`, `vfc`).
-     Ces deux champs restent à `null` tant qu'ils n'existent pas.
+   - **FC repos : reprise du suivi depuis le 21 sept 2026** (Romain porte sa montre en continu à
+     partir de cette date — confirmé explicitement). Consulter `/app/heart-rate/<date>` à chaque
+     sync et **ajouter un point par jour à `fc_repos_serie`** (jamais réécrire les points passés).
+     ⚠️ **`fc_repos` (la valeur affichée comme référence) ne doit être recalculée qu'une fois 2-3
+     semaines de port continu accumulées** (donc pas avant le ~12 octobre) — avant cette date,
+     continuer à alimenter `fc_repos_serie` jour par jour mais laisser le champ `fc_repos` sur sa
+     dernière valeur pré-pause (49) plutôt que de baser une référence sur une poignée de jours. Une
+     fois les 2-3 semaines écoulées, moyenner ces jours de vie normale (hors mariage/voyage) pour
+     fixer la nouvelle référence, et réactiver le seuil d'alerte (+7 bpm au-dessus).
+   - **Sommeil et VFC : collecte active depuis le 21 sept 2026.** Récupérer le **sommeil**
+     (`/app/sleep/<date>`) et la **VFC** (`/app/hrv-status`) à chaque sync, ajouter dans
+     `window.GARMIN` (`sommeil`, `vfc`) et dans `window.SOMMEIL` (détail nuit par nuit, même format
+     que l'exploration ponctuelle du 11 sept — voir ce tableau dans `data-strava.js`) ainsi que dans
+     `HEBDO[].sommeil_min` (moyenne de la semaine) une fois au moins une nuit du port continu
+     disponible pour la semaine en cours.
    - Si Chrome n'est pas disponible : **ne pas bloquer**, conserver les valeurs Garmin
      précédentes et passer `MAJ.garmin` à `false`.
 
@@ -297,13 +300,14 @@ standards, mais rester vigilant si Romain en fournit une sous un autre nom).
   sont dans les archétypes (`tapis`) — 14,5 km/h pour le VO2max, 13,1 pour les 1000 m,
   12,6 pour les 2000 m, 6-8 % d'inclinaison pour les côtes. Les tapis étant souvent mal calibrés,
   croiser avec la FC plutôt que de se fier aveuglément à la vitesse affichée.
-- **FC de repos — suivi mis en pause le 9 septembre 2026, à la demande de Romain.** Ne plus consulter
-  Garmin pour cette donnée, ne plus la signaler dans le compte-rendu, positif ou négatif. La référence de
-  49 bpm (fin août, vacances) n'était de toute façon pas fiable comme ligne de base — inutile de continuer
-  à commenter des écarts par rapport à un chiffre qu'on sait déjà faux. **Reprendre uniquement quand Romain
-  confirme qu'il porte sa montre en continu** (attendu fin septembre / courant octobre) : à ce moment,
-  redéfinir `fc_repos` sur la moyenne des 2-3 premières semaines de port continu (vie normale, hors
-  vacances), reprendre l'alimentation de `fc_repos_serie`, et réactiver un vrai seuil d'alerte (+7 bpm
-  au-dessus de cette nouvelle référence).
+- **FC de repos, sommeil, VFC — port continu de la montre confirmé le 21 septembre 2026.** La pause
+  du 9 sept est levée : `fc_repos_serie`/sommeil/VFC se réalimentent jour par jour à chaque sync (voir
+  étape 5 de la procédure). Point important à ne pas oublier : le champ `fc_repos` affiché comme
+  référence reste sur son ancienne valeur (49, pré-pause) jusqu'à ce que 2-3 semaines de port continu
+  soient accumulées (**pas avant le ~12 octobre**) — ne pas le recalculer prématurément sur 3-4 jours
+  de données, et ne pas commenter d'écart par rapport à ce chiffre avant cette date puisqu'on sait déjà
+  qu'il va changer. Une fois les 2-3 semaines passées : moyenner les jours de vie normale (hors tout
+  déplacement/événement particulier), redéfinir `fc_repos`, et réactiver un vrai seuil d'alerte
+  (+7 bpm au-dessus de cette nouvelle référence).
 - **Allure des footings** : le problème n°1 de Romain est de courir ses sorties faciles trop vite
   (5:26/km au lieu de 6:00-6:30). Si l'allure moyenne hebdomadaire ne descend pas, le dire.
