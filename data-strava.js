@@ -3,9 +3,9 @@
    Source : Strava (+ Garmin quand disponible)
    ============================================================ */
 
-window.MAJ = {"date": "2026-09-21T18:30:00", "source": "Strava", "garmin": true};
+window.MAJ = {"date": "2026-09-22T14:00:00", "source": "Strava", "garmin": true};
 
-window.ACTIVITES = [{"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}, {"date": "2026-09-11", "type": "swim", "nom": "Natation le matin", "duree_min": 38.8, "m": 1800}, {"date": "2026-09-12", "type": "swim", "nom": "Natation le matin", "duree_min": 36.9, "m": 1700}, {"date": "2026-09-12", "type": "run", "nom": "Course à pied le matin", "duree_min": 51.3, "km": 8.45, "allure": "6:05", "fc": 135.5}, {"date": "2026-09-13", "type": "run", "nom": "Course à pied le matin", "duree_min": 113.3, "km": 20.01, "allure": "5:40", "fc": 137.6, "qual": true}, {"date": "2026-09-15", "type": "run", "nom": "Course à pied le matin", "duree_min": 65.3, "km": 12.01, "allure": "5:26", "fc": 144.1, "qual": true, "incline_min": 65}, {"date": "2026-09-16", "type": "strength", "nom": "Renfo A (+ 30 min d'abdo)", "duree_min": 60.0},{"date": "2026-09-18", "type": "run", "nom": "Course à pied le matin", "duree_min": 81.8, "km": 14.09, "allure": "5:48", "fc": 148.3, "qual": true, "dplus": 229}, {"date": "2026-09-19", "type": "run", "nom": "Course à pied le matin", "duree_min": 58.9, "km": 10.75, "allure": "5:29", "fc": 149.2, "dplus": 100}, {"date": "2026-09-21", "type": "run", "nom": "Course à pied (seuil)", "duree_min": 70.4, "km": 12.25, "allure": "5:45", "fc": 149.4, "qual": true}];
+window.ACTIVITES = [{"date": "2026-09-02", "type": "run", "nom": "Course à pied dans l'après-midi", "duree_min": 47.4, "km": 9.03, "allure": "5:15"}, {"date": "2026-09-03", "type": "strength", "nom": "Entraînement aux poids", "duree_min": 54.8, "exercices": [{"nom": "Ab Crunch Machine", "sets": ["× 100"]}, {"nom": "Back Extension", "sets": ["5 kg × 30"]}, {"nom": "Seated Calf Raise", "sets": ["61.3 kg × 30"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 30"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 50"]}, {"nom": "Machine Glute Kickback", "sets": ["27 kg × 50"]}, {"nom": "Leg Press", "sets": ["190 kg × 50"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 30"]}]}, {"date": "2026-09-04", "type": "swim", "nom": "Natation le matin", "duree_min": 36.0, "m": 1675}, {"date": "2026-09-04", "type": "run", "nom": "Course à pied le matin", "duree_min": 49.7, "km": 9.08, "allure": "5:28"}, {"date": "2026-09-05", "type": "run", "nom": "Course à pied le matin", "duree_min": 77.5, "km": 14.24, "allure": "5:27"}, {"date": "2026-09-06", "type": "run", "nom": "Course à pied le matin", "duree_min": 87.7, "km": 15.01, "allure": "5:51"}, {"date": "2026-09-08", "type": "run", "nom": "Course à pied le matin (VO2max)", "duree_min": 51.4, "km": 9.74, "allure": "5:17", "fc": 139.9, "qual": true, "zone": "Z5"}, {"date": "2026-09-09", "type": "strength", "nom": "Renfo", "duree_min": 60.0, "exercices": [{"nom": "Leg Press", "sets": ["× 15", "× 15", "25 kg × 10", "25 kg × 10", "50 kg × 10"]}, {"nom": "Machine Leg Extension", "sets": ["95 kg × 10", "95 kg × 10", "65 kg × 12", "65 kg × 12"]}, {"nom": "Seated Machine Leg Curl", "sets": ["65 kg × 12", "65 kg × 12", "65 kg × 12", "65 kg × 10"]}, {"nom": "Machine Glute Kickback", "sets": ["40 kg × 15", "40 kg × 15", "40 kg × 15"]}, {"nom": "Machine Hip Adduction", "sets": ["80 kg × 15", "80 kg × 15", "80 kg × 15"]}, {"nom": "Machine Hip Abduction", "sets": ["95 kg × 20", "95 kg × 20", "95 kg × 20"]}, {"nom": "Seated Calf Raise", "sets": ["61 kg × 15", "61 kg × 15", "51 kg × 15"]}]}, {"date": "2026-09-10", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 53.2, "km": 8.56, "allure": "6:13", "fc": 147.5, "qual": true, "incline_min": 21}, {"date": "2026-09-11", "type": "swim", "nom": "Natation le matin", "duree_min": 38.8, "m": 1800}, {"date": "2026-09-12", "type": "swim", "nom": "Natation le matin", "duree_min": 36.9, "m": 1700}, {"date": "2026-09-12", "type": "run", "nom": "Course à pied le matin", "duree_min": 51.3, "km": 8.45, "allure": "6:05", "fc": 135.5}, {"date": "2026-09-13", "type": "run", "nom": "Course à pied le matin", "duree_min": 113.3, "km": 20.01, "allure": "5:40", "fc": 137.6, "qual": true}, {"date": "2026-09-15", "type": "run", "nom": "Course à pied le matin", "duree_min": 65.3, "km": 12.01, "allure": "5:26", "fc": 144.1, "qual": true, "incline_min": 65}, {"date": "2026-09-16", "type": "strength", "nom": "Renfo A (+ 30 min d'abdo)", "duree_min": 60.0},{"date": "2026-09-18", "type": "run", "nom": "Course à pied le matin", "duree_min": 81.8, "km": 14.09, "allure": "5:48", "fc": 148.3, "qual": true, "dplus": 229}, {"date": "2026-09-19", "type": "run", "nom": "Course à pied le matin", "duree_min": 58.9, "km": 10.75, "allure": "5:29", "fc": 149.2, "dplus": 100}, {"date": "2026-09-21", "type": "run", "nom": "Course à pied (seuil)", "duree_min": 70.4, "km": 12.25, "allure": "5:45", "fc": 149.4, "qual": true}, {"date": "2026-09-22", "type": "run", "nom": "Course à pied le matin (côtes)", "duree_min": 76.4, "km": 11.5, "allure": "6:38", "fc": 147.6, "qual": true, "incline_min": 18}];
 
 window.ANALYSES = {
  "w4s0": {"date": "2026-09-08", "conclusion": "conforme", "texte": "Séance faite à 79-95 % de la vitesse tapis cible (14,5 km/h), mais avec une FC montée à 97 % de FCmax (179 bpm) sur la dernière fraction — l'effort réel était conforme malgré une vitesse affichée en dessous de la cible. Le tapis semble mal calibré ou tu compenses par la foulée plutôt que la vitesse affichée. <b>Conclusion : aucun ajustement du plan</b> — l'archétype VO2max a été mis à jour pour prioriser la FC sur la vitesse affichée dans les prochaines séances de ce type."},
@@ -13,26 +13,26 @@ window.ANALYSES = {
  "w4s6": {"date": "2026-09-13", "conclusion": "conforme", "texte": "20 km bouclés — nouveau record de distance (précédent : 16,4 km) — avec une vraie leçon de gestion : 9 km tranquilles avant le bloc à allure marathon, comme le prévoit l'archétype. Le bloc de 20′ visé a été tenu en durée (4 km à environ 5:00/km, contre 5:10-5:30/km ciblés) — plus rapide que la cible, mais la FC est restée maîtrisée (148 → 155 bpm, dans la zone allure marathon jusqu'au bout, jamais au seuil). Les 7 derniers kilomètres ont été gérés sous 140 bpm comme prévu — exactement la compétence recherchée pour ne pas subir la fin de course. <b>Conclusion : conforme, aucun ajustement du plan</b> — la vitesse un peu vive sur le bloc n'est pas un problème tant que la FC reste sous contrôle, c'est même un bon signal de réserve. Seul point à garder à l'œil sur les prochains blocs à allure marathon : viser plus précisément 5:10-5:30/km pour que l'automatisme se cale sur l'allure réelle du 8 novembre, pas sur une allure plus rapide qui ne sera pas tenable sur 42 km."},
  "w5s1": {"date": "2026-09-15", "conclusion": "conforme", "texte": "Protocole complet maintenu (6 × 1 km, aucune réduction malgré une forme notée \"bof\"), mais intensité pilotée à la baisse en connaissance de cause : soirée arrosée la veille couchée à 2h du matin, sommeil réduit. Allure choisie 12,5 à 13 km/h (contre 13,1 km/h ciblés), progressive sur les deux derniers tiers — un bon réflexe d'auto-régulation plutôt qu'un abandon du protocole. FC cohérente avec l'effort réellement fourni, montée jusqu'à 170 bpm sur la fin. <b>Conclusion : conforme, aucun ajustement du plan</b> — rester sur la fourchette basse était le bon choix ce jour précis ; le protocole complet à 13,1 km/h reste à viser la prochaine fois que la forme sera meilleure."},
  "w5s3": {"date": "2026-09-18", "conclusion": "conforme", "texte": "Durée et distance quasiment pile sur la cible (1h22 pour 14,1 km, contre 1h20 visé, fourchette 1h15-1h25). Terrain vallonné (Ansouis, 229 m de D+ sur la sortie) qui rend le bloc allure marathon difficile à isoler proprement sur l'allure seule — la FC raconte quand même l'histoire : montée progressive puis franchissement du seuil des 163 bpm en fin de sortie (jusqu'à 165 bpm), cohérent avec une tentative de bloc à allure marathon sur la deuxième moitié. <b>Conclusion : conforme, aucun ajustement du plan</b> — rien n'indique un écart réel, juste un terrain qui complique la lecture fine cette fois-ci. Pas de commentaire laissé dans l'app pour cette séance, contrairement aux précédentes — analyse basée uniquement sur les données Strava."},
- "w6s0": {"date": "2026-09-21", "conclusion": "conforme", "texte": "Séance de seuil (4 × 2000 m Z4) tenue sur les 2 premiers relais (5:40-5:50/km, FC 160-170 bpm, bien en zone seuil) puis volontairement réduite en temps ET en vitesse sur les 2 derniers (jusqu'à 5:57-6:04/km, FC redescendue vers 150-152 bpm) — exactement ce que décrit ta note, confirmé par les tours. <b>Conclusion : conforme, aucun ajustement du plan</b> — une petite forme après un week-end chargé justifie largement de couper court plutôt que de forcer un protocole qui ne passe pas ce jour précis. Point de vigilance à noter ailleurs que sur cette séance elle-même : la forme (TSB) tombe à -16,1, la valeur la plus basse depuis le début du suivi — pas d'alarme immédiate, mais à surveiller d'ici la sortie longue clé de la semaine (dimanche, 1h50-2h dont 30′ Z3)."}
+ "w6s0": {"date": "2026-09-21", "conclusion": "conforme", "texte": "Séance de seuil (4 × 2000 m Z4) tenue sur les 2 premiers relais (5:40-5:50/km, FC 160-170 bpm, bien en zone seuil) puis volontairement réduite en temps ET en vitesse sur les 2 derniers (jusqu'à 5:57-6:04/km, FC redescendue vers 150-152 bpm) — exactement ce que décrit ta note, confirmé par les tours. <b>Conclusion : conforme, aucun ajustement du plan</b> — une petite forme après un week-end chargé justifie largement de couper court plutôt que de forcer un protocole qui ne passe pas ce jour précis. Point de vigilance à noter ailleurs que sur cette séance elle-même : la forme (TSB) tombe à -16,1, la valeur la plus basse depuis le début du suivi — pas d'alarme immédiate, mais à surveiller d'ici la sortie longue clé de la semaine (dimanche, 1h50-2h dont 30′ Z3)."},
+ "w6s3": {"date": "2026-09-22", "conclusion": "conforme", "texte": "Protocole exécuté intégralement et même au-delà de la cible : 12 répétitions à 10 km/h avec une inclinaison progressive de 6 % à 8 % (+0,5 point toutes les 2 répétitions), stabilisée à 8 % pour les 4 dernières — plus exigeant que le \"6-8 %\" visé par l'archétype, tenu jusqu'au bout (\"il ne me restait rien sous le pied à la fin\"). <b>Pic à 185 bpm</b> — pile la FCmax actuellement retenue (185), pas au-dessus : ça confirme que cette valeur est une estimation raisonnable plutôt que de la remettre en cause (le seuil de recalcul des zones est un pic qui <i>dépasse</i> 185, pas qui l'atteint). Bon signe additionnel noté par Romain : la FC redescend vite après l'effort, cohérent avec une bonne récupération cardiaque. <b>Conclusion : conforme, aucun ajustement du plan.</b> Repos exceptionnel cette nuit (score de sommeil 97/100, 7h44) grâce au port continu de la montre désormais actif — probablement aidé par une séance intense tôt dans la journée précédente."}
 };
 
-window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOKA", "modele": "Clifton 11", "km": 134.2}};
+window.MATERIEL = {"chaussure": {"nom": "Marathon Nice - Cannes", "marque": "HOKA", "modele": "Clifton 11", "km": 145.7}};
 
-window.GARMIN = {"vo2max": 51, "vo2max_serie": [{"d": "2026-09-15", "v": 52}, {"d": "2026-09-21", "v": 51}], "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}, {"d": "2026-09-21", "v": 54}], "predictions": {"5k": "21:21", "10k": "45:35", "semi": "1:42:48", "marathon": "3:51:39"}, "sommeil": null, "vfc": null};
+window.GARMIN = {"vo2max": 51, "vo2max_serie": [{"d": "2026-09-15", "v": 52}, {"d": "2026-09-21", "v": 51}, {"d": "2026-09-22", "v": 51}], "fc_repos": 49, "fc_repos_serie": [{"d": "2026-08-29", "v": 47}, {"d": "2026-08-31", "v": 54}, {"d": "2026-09-02", "v": 55}, {"d": "2026-09-03", "v": 55}, {"d": "2026-09-04", "v": 61}, {"d": "2026-09-05", "v": 58}, {"d": "2026-09-08", "v": 67}, {"d": "2026-09-09", "v": 58}, {"d": "2026-09-21", "v": 54}, {"d": "2026-09-22", "v": 47}], "predictions": {"5k": "21:20", "10k": "45:35", "semi": "1:42:49", "marathon": "3:51:48"}, "sommeil": 97, "vfc": 76};
 
-// Détail nuit par nuit — exploration ponctuelle du 11 sept (pas un suivi en continu) : 6 nuits
-// réelles retrouvées sur Garmin mi/fin août (avant la pause du 9 sept), utilisées pour tester
-// le modèle de données et la corrélation sommeil/fatigue en conditions réelles. Les moyennes
-// hebdo correspondantes (sommeil_min/sommeil_profond_min/sommeil_paradoxal_min/sommeil_score/
-// sommeil_hrv) sont déjà reportées dans HEBDO pour les semaines du 10, 17 et 24 août. Ce tableau
-// ne sera pas régénéré par la sync tant que le port continu n'a pas repris (voir UPDATE.md).
+// Détail nuit par nuit. Nuits d'août : exploration ponctuelle du 11 sept (pas un suivi en continu),
+// retrouvées sur Garmin avant la pause du 9 sept — moyennes hebdo déjà reportées dans HEBDO pour les
+// semaines du 10, 17 et 24 août. À partir du 22 sept : vraies nuits de port continu, une entrée par
+// sync (voir UPDATE.md).
 window.SOMMEIL = [
   {"date": "2026-08-15", "score": 92, "duree_min": 550, "profond_min": 107, "leger_min": 309, "paradoxal_min": 135, "eveil_min": 3, "hr_nuit": 50, "hr_repos": 45, "hrv": 80, "spo2_moy": 96},
   {"date": "2026-08-17", "score": 72, "duree_min": 402, "profond_min": 88, "leger_min": 280, "paradoxal_min": 34, "eveil_min": 1, "hr_nuit": 59, "hr_repos": 50, "hrv": 69, "spo2_moy": 95},
   {"date": "2026-08-20", "score": 68, "duree_min": 326, "profond_min": 97, "leger_min": 196, "paradoxal_min": 33, "eveil_min": 3, "hr_nuit": 52, "hr_repos": 44, "hrv": 66, "spo2_moy": 98},
   {"date": "2026-08-23", "score": 44, "duree_min": 238, "profond_min": 0, "leger_min": 201, "paradoxal_min": 38, "eveil_min": 1, "hr_nuit": 48, "hr_repos": 43, "hrv": 84, "spo2_moy": 93},
   {"date": "2026-08-27", "score": 78, "duree_min": 472, "profond_min": 22, "leger_min": 336, "paradoxal_min": 115, "eveil_min": 1, "hr_nuit": 55, "hr_repos": 49, "hrv": 73, "spo2_moy": 97},
-  {"date": "2026-08-29", "score": 81, "duree_min": 446, "profond_min": 78, "leger_min": 296, "paradoxal_min": 73, "eveil_min": 0, "hr_nuit": 54, "hr_repos": 47, "hrv": 61, "spo2_moy": 96}
+  {"date": "2026-08-29", "score": 81, "duree_min": 446, "profond_min": 78, "leger_min": 296, "paradoxal_min": 73, "eveil_min": 0, "hr_nuit": 54, "hr_repos": 47, "hrv": 61, "spo2_moy": 96},
+  {"date": "2026-09-22", "score": 97, "duree_min": 464, "profond_min": 102, "leger_min": 250, "paradoxal_min": 112, "eveil_min": 5, "hr_nuit": 51, "hr_repos": 47, "hrv": 76, "spo2_moy": 97}
 ];
 
 window.HEBDO = [
@@ -383,25 +383,31 @@ window.HEBDO = [
  },
  {
   "lundi": "2026-09-21",
-  "km": 12.25,
-  "h": 1.17,
+  "km": 23.8,
+  "h": 2.45,
   "dplus": 0,
-  "sorties": 1,
+  "sorties": 2,
   "natations": 0,
   "renfo": 0,
   "longest": 12.25,
-  "allure": "5:45",
-  "allure_min": 5.744,
-  "fc": 149.4,
-  "eff": 1.166,
+  "allure": "6:11",
+  "allure_min": 6.181,
+  "fc": 148.5,
+  "eff": 1.09,
   "nat_m": 0,
-  "charge": 99,
-  "ctl": 31.3,
-  "atl": 47.4,
-  "tsb": -16.1,
-  "aero_min": 59.0,
-  "anaero_min": 11.3
+  "charge": 197,
+  "ctl": 32.9,
+  "atl": 54.6,
+  "tsb": -21.7,
+  "aero_min": 135.4,
+  "anaero_min": 11.3,
+  "incline_min": 18,
+  "sommeil_min": 464,
+  "sommeil_profond_min": 102,
+  "sommeil_paradoxal_min": 112,
+  "sommeil_score": 97,
+  "sommeil_hrv": 76
  }
 ];
 
-window.TOTAUX = {"km": 668.4, "h": 64.9, "sorties": 65, "natations": 17};
+window.TOTAUX = {"km": 679.9, "h": 66.2, "sorties": 66, "natations": 17};
