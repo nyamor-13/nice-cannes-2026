@@ -281,6 +281,30 @@ par un `git push` de ce fichier.
 3. `git push` du commit de l'étape 1 (trace/historique du dépôt, indépendant de la publication
    réelle vers Firestore).
 
+### Si `data-plan.js` a changé (rare, toujours après validation explicite de Romain)
+
+Même principe, et **tout aussi obligatoire** : un `git push` de `data-plan.js` ne suffit pas, il
+faut aussi pousser vers `appdata/plan` dans Firestore, sinon l'app publiée continue d'afficher
+l'ancienne version indéfiniment. **Bug réel rencontré le 28 sept 2026** : édition + commit + push
+git faits, étape Firestore oubliée — Romain ne voyait aucun changement sur le site en ligne.
+
+1. Convertir `data-plan.js` en JSON (les 4 champs `META`, `ZONES`, `ARCHETYPES`, `SEMAINES`) avec
+   `jsc` (JavaScriptCore en ligne de commande, présent nativement sur macOS) :
+   ```
+   JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
+   { printf 'var window={};\n'; cat data-plan.js; \
+     printf '\nprint(JSON.stringify({META:window.META,ZONES:window.ZONES,ARCHETYPES:window.ARCHETYPES,SEMAINES:window.SEMAINES}));\n'; \
+   } > /tmp/extract-plan.js
+   "$JSC" /tmp/extract-plan.js > /tmp/data-plan-payload.json
+   ```
+   ⚠️ Ne pas faire cette extraction via `osascript -l JavaScript` (JXA) : son flux stdout corrompt
+   silencieusement les caractères non-ASCII (accents, ′ ″ — ×, emoji) en mojibake façon MacRoman
+   dès qu'on imprime le résultat — `jsc` n'a pas ce problème et produit de l'UTF-8 propre directement.
+2. Pousser vers Firestore : `python3 sync-to-firestore.py plan /tmp/data-plan-payload.json`.
+3. **Vérifier par une lecture Firestore directe** (pas juste le message "✅ écrit") que le contenu
+   correspond bien à l'édition avant de dire à Romain que c'est publié.
+4. `git add data-plan.js && git commit && git push` comme d'habitude.
+
 Ne jamais commiter autre chose que `data-strava.js` sans que ce soit explicitement demandé, et ne
 **jamais** committer une clé de compte de service (`.gitignore` bloque déjà les noms de fichiers
 standards, mais rester vigilant si Romain en fournit une sous un autre nom).
