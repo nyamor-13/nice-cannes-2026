@@ -9,10 +9,12 @@ Ce dossier contient le suivi du marathon Nice→Cannes de Romain (8 novembre 202
 | `index.html` | L'application (2 onglets) | ❌ jamais automatiquement |
 | `data-plan.js` | Plan des 12 semaines, zones, archétypes de séances | ❌ seulement si le plan change |
 | `data-strava.js` | Activités réelles + agrégats hebdomadaires + métriques Garmin | ✅ **chaque midi** |
+| `data-withings.js` | Poids et composition corporelle | ✅ **chaque midi** (API Withings depuis le 28 sept 2026) |
 
 Les saisies de Romain (cases cochées, forme du jour, ressentis) vivent dans le `localStorage`
 du navigateur sous la clé `mnc2026-v3`. **Elles ne sont jamais touchées** par la mise à jour :
-c'est pour ça que seul `data-strava.js` est réécrit.
+c'est pour ça que `data-plan.js` n'est jamais réécrit automatiquement, contrairement aux deux
+fichiers de données ci-dessus.
 
 ## Ce qu'il faut faire
 
@@ -204,6 +206,34 @@ semaine, ne rien ajouter plutôt que de deviner.
      <(printf 'var window={};\n'; cat data-strava.js; printf '\n"ok"\n')
    ```
    En cas d'erreur, restaurer la version précédente plutôt que de laisser un fichier cassé.
+
+## Withings (poids et composition corporelle) — automatisé depuis le 28 sept 2026
+
+**Changé le 28 sept 2026** : ce n'est plus une lecture manuelle via computer-use (ça a laissé la
+donnée figée 3 semaines d'affilée) — c'est maintenant une vraie API, à synchroniser à chaque sync
+quotidienne comme Strava/Garmin.
+
+Prérequis (une seule fois, déjà fait si `~/.secrets/withings-tokens.json` existe) :
+`python3 withings-setup.py` — voir l'en-tête de ce fichier pour le détail de la procédure
+(création d'une app sur developer.withings.com, autorisation OAuth). Le refresh_token dure ~1 an
+et se renouvelle tout seul ensuite, aucune raison de le relancer sauf message d'erreur explicite.
+
+À chaque sync :
+```
+python3 sync-withings.py --write /tmp/withings-payload.json
+python3 sync-to-firestore.py withings /tmp/withings-payload.json
+```
+Committer aussi `data-withings.js` localement si son contenu a changé (même logique que
+`data-strava.js` : source de référence + trace, mais la vraie publication passe par Firestore).
+
+⚠️ Deux champs (`masse_maigre_statut`, `masse_osseuse_statut`) utilisent un seuil approximatif
+faute d'avoir pu confirmer les bornes exactes de l'app Withings elle-même (voir l'avertissement en
+tête de `sync-withings.py`) — à comparer avec l'app au premier vrai relevé automatique et ajuster
+le script si l'écart est net. Les autres champs (poids, IMC, % muscle, % graisse, tendances) sont
+calculés directement depuis les mesures brutes de l'API, sans approximation.
+
+Si `sync-withings.py` échoue avec une erreur de token, ne pas insister silencieusement : signaler
+dans le compte-rendu et proposer de relancer `withings-setup.py`.
 
 ## Marquer les séances réalisées
 

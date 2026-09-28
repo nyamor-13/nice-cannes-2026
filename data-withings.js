@@ -1,8 +1,8 @@
 /* ============================================================
-   DONNÉES WITHINGS — relevé MANUEL, jamais touché par la tâche automatique
-   Source : app Withings native sur le Mac de Romain, lue à la demande
-   via computer-use (pas d'API/connecteur disponible).
-   Pour rafraîchir : redemander à Claude de relire l'app Withings.
+   DONNÉES WITHINGS — synchronisé automatiquement depuis le 28 sept 2026
+   Source : API officielle Withings (voir withings-setup.py / sync-withings.py),
+   même cadence que data-strava.js. Avant cette date, relevé manuel ponctuel
+   via computer-use sur l'app Mac — voir UPDATE.md pour la procédure actuelle.
    ============================================================ */
 
 window.WITHINGS = {
