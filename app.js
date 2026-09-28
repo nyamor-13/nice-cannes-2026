@@ -828,8 +828,12 @@ function kpiDefs(){
      t:trend(TB.map(x=>x.anaero_min)),n:H[H.length-1].aero_min!=null?`Complément : ${H[H.length-1].aero_min} min en aérobie (<163 bpm) cette semaine. Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant.`:"Calculé à partir des tours de chaque course — seulement disponible à partir du 7 sept, pas d'historique avant."},
     {key:"sommeil",l:"Sommeil",v:lastSommeil!=null?`${Math.round(lastSommeil/6)/10}h`:null,
      u:"heures de sommeil/nuit (moyenne hebdo)",b:bars("sommeil_min"),c:"#818cf8",
-     t:tSommeil,n:"Semaines S1-S2 : quelques nuits captées mi/fin août, à titre de test (avant la pause du 9 sept), pas un suivi continu. L'indicateur reprendra automatiquement, sans rien à reconfigurer, dès le port continu de la montre (fin septembre / courant octobre).",
-     emptyMsg:"En attente du port continu de la montre (fin septembre / courant octobre) — cet indicateur s'alimentera automatiquement dès que les données Garmin seront disponibles."}
+     t:tSommeil,n:lastSommeil==null
+       ?"En attente du port continu de la montre — cet indicateur s'alimentera automatiquement dès qu'une nuit sera captée."
+       :progressCaption(tSommeil,
+         t=>`Suivi continu depuis le 21 septembre — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine, en hausse de ${t.pct.toFixed(0)} % sur 3 semaines.`,
+         `Suivi continu depuis le 21 septembre — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine.`),
+     emptyMsg:"En attente de données Garmin — cet indicateur s'alimentera automatiquement dès qu'une nuit sera captée."}
   ];
 }
 function renderKpis(){
@@ -1012,11 +1016,21 @@ function indicatorAnalysis(key){
   if(key==="sommeil"){
     const rows=sommeilSignals();
     if(!rows) return {cls:"co-p",title:"En attente de données",
-      txt:"Cet indicateur est prêt à s'alimenter dès que tu porteras la montre en continu (attendu fin septembre / courant octobre) — durée de sommeil moyenne par nuit, semaine par semaine, avec exactement le même modèle que les autres indicateurs (histogramme, tendance, projection). Une fois calibré sur de vraies données, il pourra aussi devenir un facteur correctif du verdict de forme (TSB) affiché sur les indicateurs Charge/CTL/ATL/TSB — mais pas avant d'avoir de quoi calibrer ce lien plutôt que de deviner une formule."};
-    const lines=rows.map(r=>`Semaine du ${jourLong(r.lundi)} : score <b>${r.score}/100</b>, sommeil profond <b>${Math.round(r.profond)} min/nuit</b> — forme (TSB) <b>${r.tsb>0?"+":""}${r.tsb}</b>${r.fc_footing?`, FC effort facile <b>${r.fc_footing} bpm</b>`:""}.`).join("<br>");
+      txt:"Cet indicateur s'alimentera automatiquement dès qu'une nuit sera captée par la montre — durée de sommeil moyenne par nuit, semaine par semaine, avec exactement le même modèle que les autres indicateurs (histogramme, tendance, projection). Une fois calibré sur de vraies données, il pourra aussi devenir un facteur correctif du verdict de forme (TSB) affiché sur les indicateurs Charge/CTL/ATL/TSB — mais pas avant d'avoir de quoi calibrer ce lien plutôt que de deviner une formule."};
+    // Distinguer les nuits isolées d'avant la pause (test, mi/fin août) du vrai suivi continu
+    // repris le 21 sept — sinon le texte finit par nier des données qu'il affiche lui-même.
+    const fmt=list=>list.map(r=>`Semaine du ${jourLong(r.lundi)} : score <b>${r.score}/100</b>, sommeil profond <b>${Math.round(r.profond)} min/nuit</b> — forme (TSB) <b>${r.tsb>0?"+":""}${r.tsb}</b>${r.fc_footing?`, FC effort facile <b>${r.fc_footing} bpm</b>`:""}.`).join("<br>");
+    const continu=rows.filter(r=>r.lundi>="2026-09-21");
+    const ancien=rows.filter(r=>r.lundi<"2026-09-21");
+    if(continu.length){
+      return {cls:"co-p",title:"Exploration — sommeil croisé avec forme et FC (test, pas un modèle validé)",
+        txt:`Suivi continu depuis le 21 septembre. Semaine par semaine :<br><br>${fmt(continu)}
+        ${ancien.length?`<br><br>Avant la reprise, quelques nuits isolées avaient aussi été captées à titre de test (mi/fin août) :<br><br>${fmt(ancien)}`:""}
+        <br><br>Encore trop peu de semaines de suivi continu pour en tirer une vraie conclusion statistique — mais le mécanisme est prêt et s'enrichit chaque semaine : à terme, ce croisement pourra nourrir le verdict de forme sur les indicateurs Charge/CTL/ATL/TSB.`};
+    }
     return {cls:"co-p",title:"Exploration — sommeil croisé avec forme et FC (test, pas un modèle validé)",
-      txt:`Sur les seules semaines où on a des nuits captées (quelques jours mi/fin août, avant la pause du 9 sept), voici ce que ça donne à titre d'exemple :<br><br>${lines}
-      <br><br>Beaucoup trop peu de semaines pour en tirer une vraie conclusion (3 points, et le sommeil n'est qu'une poignée de nuits par semaine, pas une couverture complète) — mais le mécanisme est prêt : dès que le port continu reprendra, ce croisement s'enrichira automatiquement et pourra nourrir le verdict de forme sur les indicateurs Charge/CTL/ATL/TSB.`};
+      txt:`Sur les seules semaines où on a des nuits captées (quelques jours mi/fin août, avant la pause du 9 sept), voici ce que ça donne à titre d'exemple :<br><br>${fmt(ancien)}
+      <br><br>Beaucoup trop peu de semaines pour en tirer une vraie conclusion (${ancien.length} points, et le sommeil n'est qu'une poignée de nuits par semaine, pas une couverture complète) — mais le mécanisme est prêt : dès que le port continu reprendra, ce croisement s'enrichira automatiquement et pourra nourrir le verdict de forme sur les indicateurs Charge/CTL/ATL/TSB.`};
   }
   return null;
 }
@@ -1236,7 +1250,11 @@ function renderAnalyse(){
   const fcSerie=GARMIN.fc_repos_serie||[];
   const fcVals=fcSerie.map(x=>x.v);
   const fcLatest=fcVals.length?fcVals[fcVals.length-1]:null;
-  const fcMin=fcVals.length?Math.min(...fcVals):null, fcMax=fcVals.length?Math.max(...fcVals):null;
+  // Min/max affichés = seulement depuis la reprise du port continu (21 sept) : avant cette
+  // date, quelques relevés isolés (dont un pic à 67 avant la pause du 9 sept) ne sont pas
+  // représentatifs d'un vrai suivi et fausseraient la fourchette montrée à Romain.
+  const fcContinu=fcSerie.filter(x=>x.d>="2026-09-21").map(x=>x.v);
+  const fcMin=fcContinu.length?Math.min(...fcContinu):null, fcMax=fcContinu.length?Math.max(...fcContinu):null;
 
   // VO2max dans le temps (demande de Romain, 15 sept) : Garmin n'expose jamais de décimale, ni sur
   // la valeur du jour ni dans son historique (vérifié directement dans la page) — inutile d'en
@@ -1268,7 +1286,7 @@ function renderAnalyse(){
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil</b>
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b>${vo2Txt} — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
-  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm ces dernières semaines — la vraie référence arrive avec le port continu de la montre)</span>`:""}.
+  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm depuis la reprise du port continu le 21 septembre — la référence sera recalculée une fois assez de données accumulées, autour de la mi-octobre)</span>`:""}.
   <br><br>${lastRunTxt} Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
   <br><br>Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
   (formule de Riegel, extrapolée depuis le semi — la distance la plus proche du marathon, donc la plus fiable) — Garmin prédit
