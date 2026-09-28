@@ -61,9 +61,13 @@ c'est pour ça que seul `data-strava.js` est réécrit.
      exercice, regroupant tous ses sets dans l'ordre — voir le format déjà utilisé dans le fichier).
      Formatte chaque set en `"<poids> × <reps>"` si un poids existe, sinon juste `"× <reps>"`.
      C'est ce qui alimente le "Détail des exercices" dépliable sous chaque séance de renfo dans l'app.
-     ⚠️ Romain a deux machines de leg press différentes (une inclinée/quadriceps à poids élevé
-     190-210 kg, une horizontale/ischios-fessiers à poids affiché faible 25-50 kg) — ne jamais
-     s'étonner d'un poids très différent d'une séance à l'autre sur ce même nom d'exercice.
+     ⚠️ Erreur livres/kg historique sur plusieurs machines (leg press, abduction, adduction, leg
+     curl), corrigée par Romain fin septembre — les anciennes valeurs (ex. leg press 210 kg,
+     abduction 95 kg) étaient en réalité des livres saisies comme des kg (≈ moitié en vrais kg :
+     leg press réel 97-109 kg, abduction réelle 36-50 kg). Ne pas s'étonner d'une "baisse" sur les
+     séances synchronisées après le 24 sept 2026 : c'est la correction d'unité, pas une régression.
+     Ne jamais reconvertir a posteriori les séances synchronisées avant cette date (elles restent
+     telles que Strava les a rapportées à l'époque).
 
 3. **Mettre à jour `window.MATERIEL`** (usure du matériel) :
    - Appeler `get_gear` (filtré sur `gear_types:["Shoe"]`), repérer la paire nommée
