@@ -4,3 +4,13 @@
 # projet, ne doit jamais être commitée. Voir sync-to-firestore.py.
 firebase-service-account*.json
 *-firebase-adminsdk-*.json
+
+# Données personnelles (poids, activités, allures) — décision du 28 sept 2026
+# (session grill-me) : Firestore est la seule vraie source depuis le 11 sept,
+# ces fichiers ne doivent plus être servis publiquement par GitHub Pages.
+# Restent en local (mode __LOCAL_DEV__, voir UPDATE.md) mais ne sont plus
+# suivis par git ni publiés. Historique déjà commis avant cette date reste
+# visible dans les anciens commits GitHub (pas de réécriture d'historique).
+data-plan.js
+data-strava.js
+data-withings.js
