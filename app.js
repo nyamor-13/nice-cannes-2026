@@ -238,6 +238,12 @@ function enginePotentiel(){
 
 /* ---------- ARCHÉTYPES : famille "qualité/force" pour stats & conseils ---------- */
 const QUAL_FAM=["Qualité","Force","Compétition"];
+// Date de reprise du port continu de la montre (FC repos/sommeil/VFC) — seule source de
+// vérité pour distinguer les données "vraiment continues" des nuits/relevés isolés d'avant la
+// pause du 9 sept. Une seule constante pour ne jamais désynchroniser les endroits qui testent
+// cette date (voir kpiDefs/indicatorAnalysis "sommeil" et renderAnalyse pour la FC de repos).
+const PORT_CONTINU_DEBUT="2026-09-21";
+const PORT_CONTINU_DEBUT_TXT=new Date(PORT_CONTINU_DEBUT+"T00:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
 function weekStats(w){
   let km=0,longest=0,renfo=0,nat=0,q=0;
   w.s.forEach(s=>{
@@ -831,8 +837,8 @@ function kpiDefs(){
      t:tSommeil,n:lastSommeil==null
        ?"En attente du port continu de la montre — cet indicateur s'alimentera automatiquement dès qu'une nuit sera captée."
        :progressCaption(tSommeil,
-         t=>`Suivi continu depuis le 21 septembre — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine, en hausse de ${t.pct.toFixed(0)} % sur 3 semaines.`,
-         `Suivi continu depuis le 21 septembre — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine.`),
+         t=>`Suivi continu depuis le ${PORT_CONTINU_DEBUT_TXT} — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine, en hausse de ${t.pct.toFixed(0)} % sur 3 semaines.`,
+         `Suivi continu depuis le ${PORT_CONTINU_DEBUT_TXT} — ${Math.round(lastSommeil/6)/10}h/nuit en moyenne cette semaine.`),
      emptyMsg:"En attente de données Garmin — cet indicateur s'alimentera automatiquement dès qu'une nuit sera captée."}
   ];
 }
@@ -1020,11 +1026,11 @@ function indicatorAnalysis(key){
     // Distinguer les nuits isolées d'avant la pause (test, mi/fin août) du vrai suivi continu
     // repris le 21 sept — sinon le texte finit par nier des données qu'il affiche lui-même.
     const fmt=list=>list.map(r=>`Semaine du ${jourLong(r.lundi)} : score <b>${r.score}/100</b>, sommeil profond <b>${Math.round(r.profond)} min/nuit</b> — forme (TSB) <b>${r.tsb>0?"+":""}${r.tsb}</b>${r.fc_footing?`, FC effort facile <b>${r.fc_footing} bpm</b>`:""}.`).join("<br>");
-    const continu=rows.filter(r=>r.lundi>="2026-09-21");
-    const ancien=rows.filter(r=>r.lundi<"2026-09-21");
+    const continu=rows.filter(r=>r.lundi>=PORT_CONTINU_DEBUT);
+    const ancien=rows.filter(r=>r.lundi<PORT_CONTINU_DEBUT);
     if(continu.length){
       return {cls:"co-p",title:"Exploration — sommeil croisé avec forme et FC (test, pas un modèle validé)",
-        txt:`Suivi continu depuis le 21 septembre. Semaine par semaine :<br><br>${fmt(continu)}
+        txt:`Suivi continu depuis le ${PORT_CONTINU_DEBUT_TXT}. Semaine par semaine :<br><br>${fmt(continu)}
         ${ancien.length?`<br><br>Avant la reprise, quelques nuits isolées avaient aussi été captées à titre de test (mi/fin août) :<br><br>${fmt(ancien)}`:""}
         <br><br>Encore trop peu de semaines de suivi continu pour en tirer une vraie conclusion statistique — mais le mécanisme est prêt et s'enrichit chaque semaine : à terme, ce croisement pourra nourrir le verdict de forme sur les indicateurs Charge/CTL/ATL/TSB.`};
     }
@@ -1253,7 +1259,7 @@ function renderAnalyse(){
   // Min/max affichés = seulement depuis la reprise du port continu (21 sept) : avant cette
   // date, quelques relevés isolés (dont un pic à 67 avant la pause du 9 sept) ne sont pas
   // représentatifs d'un vrai suivi et fausseraient la fourchette montrée à Romain.
-  const fcContinu=fcSerie.filter(x=>x.d>="2026-09-21").map(x=>x.v);
+  const fcContinu=fcSerie.filter(x=>x.d>=PORT_CONTINU_DEBUT).map(x=>x.v);
   const fcMin=fcContinu.length?Math.min(...fcContinu):null, fcMax=fcContinu.length?Math.max(...fcContinu):null;
 
   // VO2max dans le temps (demande de Romain, 15 sept) : Garmin n'expose jamais de décimale, ni sur
@@ -1286,7 +1292,7 @@ function renderAnalyse(){
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil</b>
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b>${vo2Txt} — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
-  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm depuis la reprise du port continu le 21 septembre — la référence sera recalculée une fois assez de données accumulées, autour de la mi-octobre)</span>`:""}.
+  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm depuis la reprise du port continu le ${PORT_CONTINU_DEBUT_TXT} — la référence sera recalculée une fois assez de données accumulées, autour de la mi-octobre)</span>`:""}.
   <br><br>${lastRunTxt} Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
   <br><br>Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
   (formule de Riegel, extrapolée depuis le semi — la distance la plus proche du marathon, donc la plus fiable) — Garmin prédit
