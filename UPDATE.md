@@ -11,6 +11,10 @@ Ce dossier contient le suivi du marathon Nice→Cannes de Romain (8 novembre 202
 | `data-strava.js` | Activités réelles + agrégats hebdomadaires + métriques Garmin | ✅ **chaque midi** |
 | `data-withings.js` | Poids et composition corporelle | ✅ **chaque midi** (API Withings depuis le 28 sept 2026) |
 
+**Depuis le 28 sept 2026, ces trois fichiers ne sont plus suivis par git** (voir `.gitignore`) : ils
+restent en local pour le mode `__LOCAL_DEV__`, mais ne sont plus commités ni poussés vers le dépôt
+public (Firestore est la seule vraie destination). Ne plus faire `git add`/`git commit` dessus.
+
 Les saisies de Romain (cases cochées, forme du jour, ressentis) vivent dans le `localStorage`
 du navigateur sous la clé `mnc2026-v3`. **Elles ne sont jamais touchées** par la mise à jour :
 c'est pour ça que `data-plan.js` n'est jamais réécrit automatiquement, contrairement aux deux
@@ -284,20 +288,16 @@ les données affichées sont personnelles (poids, FC, allures).
 
 ## Publier une mise à jour
 
-**⚠️ Changé le 11 sept 2026 avec la mise en place de l'authentification.** `data-strava.js` n'est
-plus un fichier public servi par le site — son contenu vit dans Firestore (`appdata/strava`),
-protégé par `firestore.rules`. Continuer à régénérer `data-strava.js` **localement** exactement
-comme avant (étape 6 ci-dessus) : c'est toujours le format de référence, et il reste utile comme
-trace/diff lisible dans le dépôt. Mais la publication réelle passe maintenant par Firestore, pas
-par un `git push` de ce fichier.
+**⚠️ Changé le 11 sept 2026 avec la mise en place de l'authentification, encore changé le 28 sept
+2026.** `data-strava.js` n'est plus un fichier public servi par le site — son contenu vit dans
+Firestore (`appdata/strava`), protégé par `firestore.rules`. Continuer à régénérer `data-strava.js`
+**localement** exactement comme avant (étape 6 ci-dessus) : c'est toujours le format de référence
+pour le mode local. **Depuis le 28 sept, ce fichier n'est plus commité ni poussé sur GitHub du
+tout** (voir `.gitignore` et la session grill-me du 28 sept, décision Q5) : la seule vraie
+publication passe par Firestore.
 
-1. Régénérer `data-strava.js` comme d'habitude (étape 6 ci-dessus), le committer dans le dépôt
-   (trace/historique, toujours utile) :
-   ```
-   cd "/Users/romainsammut/Documents/Claude Code/marathon"
-   git add data-strava.js
-   git commit -m "Sync données du <date>"
-   ```
+1. Régénérer `data-strava.js` localement comme d'habitude (étape 6 ci-dessus). **Ne pas faire
+   `git add`/`git commit` dessus** : il est dans `.gitignore`, git l'ignorera de toute façon.
 2. Convertir son contenu en JSON pur (un objet plat avec les mêmes champs `window.X`) et écrire
    dans Firestore via le compte de service :
    ```
@@ -305,18 +305,17 @@ par un `git push` de ce fichier.
    ```
    Nécessite `FIREBASE_SERVICE_ACCOUNT_KEY` dans l'environnement (clé de compte de service Firebase,
    jamais commitée — voir l'en-tête de `sync-to-firestore.py` pour la procédure complète). **Si
-   cette variable n'est pas définie, ne pas bloquer la sync pour autant** : committer quand même
-   `data-strava.js` en local (étape 1), signaler dans le compte-rendu que la publication Firestore
-   n'a pas pu se faire faute de clé, et s'arrêter là plutôt que d'échouer bruyamment.
-3. `git push` du commit de l'étape 1 (trace/historique du dépôt, indépendant de la publication
-   réelle vers Firestore).
+   cette variable n'est pas définie, ne pas bloquer la sync pour autant** : signaler dans le
+   compte-rendu que la publication Firestore n'a pas pu se faire faute de clé, et s'arrêter là
+   plutôt que d'échouer bruyamment. Rien à committer dans tous les cas (fichier gitignore depuis le
+   28 sept).
 
 ### Si `data-plan.js` a changé (rare, toujours après validation explicite de Romain)
 
-Même principe, et **tout aussi obligatoire** : un `git push` de `data-plan.js` ne suffit pas, il
-faut aussi pousser vers `appdata/plan` dans Firestore, sinon l'app publiée continue d'afficher
-l'ancienne version indéfiniment. **Bug réel rencontré le 28 sept 2026** : édition + commit + push
-git faits, étape Firestore oubliée — Romain ne voyait aucun changement sur le site en ligne.
+Même principe Firestore, **tout aussi obligatoire** : pousser vers `appdata/plan`, sinon l'app
+publiée continue d'afficher l'ancienne version indéfiniment. **Bug réel rencontré le 28 sept
+2026** : édition faite localement, étape Firestore oubliée, Romain ne voyait aucun changement sur
+le site en ligne.
 
 1. Convertir `data-plan.js` en JSON (les 4 champs `META`, `ZONES`, `ARCHETYPES`, `SEMAINES`) avec
    `jsc` (JavaScriptCore en ligne de commande, présent nativement sur macOS) :
@@ -333,11 +332,16 @@ git faits, étape Firestore oubliée — Romain ne voyait aucun changement sur l
 2. Pousser vers Firestore : `python3 sync-to-firestore.py plan /tmp/data-plan-payload.json`.
 3. **Vérifier par une lecture Firestore directe** (pas juste le message "✅ écrit") que le contenu
    correspond bien à l'édition avant de dire à Romain que c'est publié.
-4. `git add data-plan.js && git commit && git push` comme d'habitude.
 
-Ne jamais commiter autre chose que `data-strava.js` sans que ce soit explicitement demandé, et ne
-**jamais** committer une clé de compte de service (`.gitignore` bloque déjà les noms de fichiers
-standards, mais rester vigilant si Romain en fournit une sous un autre nom).
+**Depuis le 28 sept 2026, `data-plan.js` est aussi dans `.gitignore`** (même décision Q5 que
+`data-strava.js`/`data-withings.js`, les trois exposaient des données personnelles en public) :
+plus de `git add`/`git commit`/`git push` dessus, la publication Firestore suffit et le fichier
+local reste la seule trace.
+
+Ne jamais commiter de fichier en dehors de `app.js`/`index.html`/`auth.js`/`data-cloud.js` et
+autres fichiers de code sans que ce soit explicitement demandé, et ne **jamais** committer une clé
+de compte de service (`.gitignore` bloque déjà les noms de fichiers standards, mais rester vigilant
+si Romain en fournit une sous un autre nom).
 
 ## Points de vigilance
 
