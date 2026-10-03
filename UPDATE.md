@@ -84,7 +84,13 @@ fichiers de données ci-dessus.
      de le signaler à Romain une fois, pour qu'il pense à surveiller l'amorti avant le marathon.
 
 4. **Recalculer les agrégats hebdomadaires** (semaines du lundi au dimanche) :
-   - `km`, `h`, `dplus`, `sorties`, `natations`, `renfo`
+   - `km`, `h`, `dplus`, `sorties`, `natations`, `renfo` — ⚠️ `h` = durée (moving time) des
+     **courses + natations uniquement, renfo exclu** (convention de toutes les semaines passées,
+     vérifiée le 3 oct après une erreur du 1er oct qui avait compté le renfo). `TOTAUX` = somme
+     des champs correspondants de `HEBDO` (km, h, sorties, natations).
+   - Semaine en cours : la recalculer **entièrement** à chaque sync à partir de toutes ses
+     activités (pas en ajoutant les nouvelles à l'ancien agrégat), et refaire CTL/ATL jour par
+     jour depuis la fin de la dernière semaine **close**.
    - `longest` : plus longue sortie de la semaine
    - `allure` / `allure_min` : temps total ÷ distance totale
    - `fc` : moyenne pondérée par le temps, sur les sorties qui ont une FC
@@ -154,8 +160,14 @@ fichiers de données ci-dessus.
      Ne jamais réécrire les points passés de cette série, seulement en ajouter un nouveau.
    - Prédictions : `connect.garmin.com/app/report/-29/running/current`
    - **FC repos : reprise du suivi depuis le 21 sept 2026** (Romain porte sa montre en continu à
-     partir de cette date — confirmé explicitement). Consulter `/app/heart-rate/<date>` à chaque
-     sync et **ajouter un point par jour à `fc_repos_serie`** (jamais réécrire les points passés).
+     partir de cette date — confirmé explicitement). **Ajouter un point par jour à
+     `fc_repos_serie`** (jamais réécrire les points passés). Méthode la plus rapide (3 oct) :
+     ouvrir `/app/heart-rate/<date du jour>/1` (vue 7 jours) et lire le tableau texte
+     "Date / Repos / Le plus haut", qui donne les 7 derniers jours d'un coup. La date dans l'URL
+     d'une vue 1 jour est ignorée par Garmin (affiche toujours aujourd'hui).
+   - Navigation sommeil : `/app/sleep/<date du jour>/0` puis le bouton "Précédent" (flèche à
+     gauche de la date, clic par coordonnées si le clic par référence ne réagit pas) pour remonter
+     nuit par nuit. Laisser 3-5 s de rendu avant `get_page_text`, sinon le texte revient vide.
      ⚠️ **`fc_repos` (la valeur affichée comme référence) ne doit être recalculée qu'une fois 2-3
      semaines de port continu accumulées** (donc pas avant le ~12 octobre) — avant cette date,
      continuer à alimenter `fc_repos_serie` jour par jour mais laisser le champ `fc_repos` sur sa
