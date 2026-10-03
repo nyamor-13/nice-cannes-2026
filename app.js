@@ -315,8 +315,9 @@ function renderHeroRow(){
   if(streak>=2) tiles.push({k:"Régularité",v:`🔥 ${streak} sem.`,cls:"streak"});
   const pred=GARMIN?.predictions?.marathon;
   if(pred){
-    const[h,m]=pred.split(":");
-    tiles.push({k:"Prédiction",v:`${+h}h${m}`,cls:""});
+    // Même arrondi que partout ailleurs (secToHM) : 3:47:33 doit se lire 3h48 ici
+    // comme sur "Pourquoi ce plan", pas 3h47 par simple troncature des secondes.
+    tiles.push({k:"Prédiction",v:secToHM(timeToSec(pred)),cls:""});
   }
   el.innerHTML=tiles.map(t=>`<div class="hero-tile ${t.cls}"><div class="ht-k">${t.k}</div><div class="ht-v">${t.v}</div></div>`).join("");
 }
