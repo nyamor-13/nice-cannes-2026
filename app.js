@@ -1719,7 +1719,7 @@ function detail(w,s,i,A,forme,st){
     ${A.exercices?`<div class="blk"><div class="bl">Exercices</div>
       <div class="tbwrap"><table class="tb extb">
         <tr><th>Exercice</th><th>Séries</th><th>Reps</th><th>Charge</th><th>Tempo</th></tr>
-        ${A.exercices.map(e=>`<tr><td>${e.nom}</td><td class="n">${e.series}</td><td class="n">${e.reps}</td><td class="n">${e.charge}</td><td>${e.tempo}</td></tr>`).join("")}
+        ${A.exercices.map(e=>`<tr><td>${e.nom}</td><td class="n">${e.series}</td><td class="n">${e.reps}</td><td class="n">${e.charge}</td><td>${e.tempo}</td></tr>${e.how?`<tr class="exhow"><td colspan="5">${e.how}</td></tr>`:""}`).join("")}
       </table></div>
       <p class="exnote">Séries × reps données pour une forme <b>normale</b> — utilise les boutons de forme ci-dessous pour l'ajustement du jour (charge, nombre de séries…).</p>
     </div>`:""}
