@@ -385,3 +385,17 @@ si Romain en fournit une sous un autre nom).
   (+7 bpm au-dessus de cette nouvelle référence).
 - **Allure des footings** : le problème n°1 de Romain est de courir ses sorties faciles trop vite
   (5:26/km au lieu de 6:00-6:30). Si l'allure moyenne hebdomadaire ne descend pas, le dire.
+
+## Courses réelles (`window.COURSES`) — ajouté le 11 oct 2026
+
+Chaque course ou test chronométré du bloc (semi solo, marathon) s'ajoute à `window.COURSES` dans
+`data-strava.js` : `{"date", "type": "semi"|"marathon", "nom", "dist" (km, 21.0975 pour un semi),
+"temps": "h:mm:ss" (meilleur effort Strava sur la distance), "fc"}`. Le champ est publié avec le
+document Firestore `strava` (ajouter `COURSES` à l'objet extrait par jsc). L'appli s'en sert pour
+remplacer le semi prédit par Garmin par le chrono réel (potentiel, textes d'accueil, tuile objectif).
+
+## FC de repos de référence (`GARMIN.fc_repos`)
+
+Recalculée le 11 oct 2026 : médiane de `fc_repos_serie` depuis le 21 sept (port continu), 21 jours → 48.
+À recalculer chaque semaine de la même façon et noter la date et le nombre de jours dans
+`GARMIN.fc_repos_ref`. Ne pas toucher `META.athlete.fc_repos` (zones du plan) sans l'accord de Romain.

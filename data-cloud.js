@@ -20,7 +20,7 @@
   // endroit à modifier si un champ change de fichier d'origine un jour.
   const DOC_FIELDS = {
     plan: ["META", "ZONES", "ARCHETYPES", "SEMAINES"],
-    strava: ["MAJ", "ACTIVITES", "ANALYSES", "MATERIEL", "GARMIN", "SOMMEIL", "HEBDO", "TOTAUX"],
+    strava: ["MAJ", "ACTIVITES", "ANALYSES", "MATERIEL", "GARMIN", "SOMMEIL", "HEBDO", "TOTAUX", "COURSES"],
     withings: ["WITHINGS"],
   };
 

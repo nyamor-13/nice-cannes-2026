@@ -226,10 +226,30 @@ function hToSec(h){ const m=h.match(/(\d+)\s*h\s*(\d+)/); return m?(+m[1]*3600+ 
 // proche du marathon, donc l'extrapolation la moins risquée. Le 5 km et le 10 km sont
 // gardés comme repères de cohérence — un grand écart entre eux est en soi une information
 // (ça confirme le déficit d'endurance spécifique plutôt que la vitesse pure).
+// Dernier semi réellement couru pendant le bloc (window.COURSES, alimenté à chaque sync), ou null.
+// Quand il existe, il remplace le semi prédit par Garmin partout : un chrono réel vaut mieux
+// qu'une estimation.
+function lastSemi(){
+  const C=(window.COURSES||[]).filter(c=>c.type==="semi"&&c.date>=SEMAINES[0].du);
+  return C.length?C[C.length-1]:null;
+}
+// Lecture du semi selon la règle du plan : ratio marathon/semi de 2,20 (le pari du plan, entre
+// Riegel 2,085 et ton historique 2,30). Équivalent ≤ objectif plan → plan validé ; ≤ objectif
+// course + 5 min → objectif course confirmé ; au-delà → objectif à revoir.
+const RATIO_PLAN=2.20, RATIO_HISTO=2.30;
+function semiVerdict(c){
+  const sec=timeToSec(c.temps), eq=sec*RATIO_PLAN, histo=sec*RATIO_HISTO;
+  const plan=hToSec(META.objectif.plan), course=hToSec(META.objectif.course);
+  const allure=secToMS(sec/c.dist);
+  const dateTxt=new Date(c.date+"T00:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+  const verdict=eq<=plan?"plan":eq<=course+300?"course":"revoir";
+  return {sec,eq,histo,allure,dateTxt,verdict};
+}
+function secToMS(s){ s=Math.round(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
 function enginePotentiel(){
-  const G=GARMIN.predictions;
+  const G=GARMIN.predictions, semi=lastSemi();
   const estimates=[["5k",5],["10k",10],["semi",21.1]].map(([k,d])=>({
-    label:k, dist:d, sec:riegel(timeToSec(G[k]),d,42.195)
+    label:k, dist:d, sec:riegel(k==="semi"&&semi?timeToSec(semi.temps):timeToSec(G[k]),k==="semi"&&semi?semi.dist:d,42.195)
   }));
   const primary=estimates[estimates.length-1];
   const secs=estimates.map(e=>e.sec);
@@ -254,6 +274,17 @@ function weekStats(w){
     if(A && QUAL_FAM.includes(A.fam)) q++;
   });
   return{km:Math.round(km),longest:Math.round(longest*10)/10,renfo,nat,q};
+}
+// Pic du plan, toujours lu dans SEMAINES (jamais écrit en dur) : semaine de plus gros volume
+// prévu (hors semaine du marathon) et plus longue sortie longue prévue.
+function peak(){
+  let vol=0,volWeek=null,sl=0,slWeek=null;
+  SEMAINES.forEach(w=>{
+    if(w.s.some(s=>s.a==="course"&&s.km>40)) return;
+    const km=weekStats(w).km; if(km>vol){vol=km;volWeek=w.n;}
+    w.s.forEach(s=>{ if((s.a==="sl"||s.a==="sl_am")&&s.km>sl){sl=s.km;slWeek=w.n;} });
+  });
+  return {vol,volWeek,sl,slWeek};
 }
 function weekAdvice(w){
   const seen=new Set(),tips=[];
@@ -310,7 +341,7 @@ function renderHeroRow(){
   const el=g("heroRow"); if(!el) return;
   const streak=pilierStreak();
   const tiles=[
-    {k:"Objectif",v:META.objectif.plan,cls:""},
+    lastSemi()?{k:"Objectif course",v:META.objectif.course,cls:""}:{k:"Objectif",v:META.objectif.plan,cls:""},
   ];
   if(streak>=2) tiles.push({k:"Régularité",v:`🔥 ${streak} sem.`,cls:"streak"});
   const pred=GARMIN?.predictions?.marathon;
@@ -400,9 +431,17 @@ function formeLabel(){
 // que de ne les découvrir qu'en semaine 7. Le message glisse automatiquement vers le prochain
 // jalon pertinent au fil des semaines.
 function nextChallengeTxt(){
-  if(curWeek<=7) return `Le vrai juge de paix arrive en deux temps : le <b>semi en solo</b> mi-octobre dira où en est vraiment le chrono, puis les <b>30 km</b> de la semaine 10 seront la répétition générale du jour J.`;
+  if(curWeek<=7) return `Le vrai juge de paix arrive en deux temps : le <b>semi en solo</b> mi-octobre dira où en est vraiment le chrono, puis les <b>${peak().sl} km</b> de la semaine ${peak().slWeek} seront la répétition générale du jour J.`;
+  const semi=lastSemi();
+  if(curWeek<=9 && semi){
+    const v=semiVerdict(semi);
+    const lecture=v.verdict==="plan"?`ce qui valide l'objectif <b>${META.objectif.plan}</b>`
+      :v.verdict==="course"?`ce qui confirme l'objectif de course <b>${META.objectif.course}</b>, avec ${META.objectif.plan} comme plafond`
+      :`un cran au-dessus de l'objectif : on vise plutôt ${secToHM(v.eq)}`;
+    return `Le semi a donné sa réponse : <b>${semi.temps}</b> (${v.allure}/km), ${lecture}. Prochain rendez-vous : les <b>${peak().sl} km</b> de la semaine ${peak().slWeek}, le vrai pic du bloc.`;
+  }
   if(curWeek===8) return `Cette semaine, c'est le <b>semi en solo</b> qui parle — son chrono validera ou ajustera l'objectif ${META.objectif.plan}.`;
-  if(curWeek<=9) return `Le semi a donné sa réponse — reste la montée vers les <b>30 km</b> de la semaine 10, le vrai pic du bloc.`;
+  if(curWeek<=9) return `Reste la montée vers les <b>${peak().sl} km</b> de la semaine ${peak().slWeek}, le vrai pic du bloc.`;
   if(curWeek===10) return `C'est la semaine du <b>pic à 30 km</b> — la plus grosse séance de toute la préparation. Si elle passe, le marathon est en très bonne voie.`;
   if(curWeek<=11) return `Le pic est passé — il ne reste qu'à <b>affûter</b> sans rien perdre de ce qui a été construit.`;
   return `C'est la semaine du <b>marathon</b>. Le travail est fait, il ne reste qu'à le restituer.`;
@@ -432,6 +471,11 @@ function confidenceTxt(){
   if(curWeek<=3) return `Trop tôt pour se prononcer sur l'objectif — ces premières semaines posent le socle, la vraie tendance se lira à partir de la mi-bloc.`;
   if(adherence<0.7) return `Le plan mène à <b>${META.objectif.plan}</b> sur le papier, mais c'est l'exécution qui doit remonter en premier — le potentiel ne suffit pas si les séances sautent.`;
   if(last.tsb!=null && last.tsb<-18) return `La trajectoire va dans le bon sens, mais la fatigue actuelle est un signal à ne pas ignorer — un objectif tenu sur un corps cassé n'en est pas un.`;
+  const semi=lastSemi();
+  if(semi){
+    const v=semiVerdict(semi);
+    return `Ton semi vaut environ <b>${secToHM(v.eq)}</b> sur marathon si le plan fait son effet sur la fin de course, ${secToHM(v.histo)} si ton historique se répète. ${v.verdict==="revoir"?`L'objectif de course mérite d'être ajusté.`:`<b>${META.objectif.course}</b> est un objectif crédible, à condition d'arriver frais et de bien gérer le ravitaillement.`}`;
+  }
   if(gapMin>20) return `L'écart avec <b>${META.objectif.plan}</b> est encore réel, mais c'est exactement ce que ${weeksLeft>0?`les ${weeksLeft} semaines restantes sont`:"la fin du bloc est"} chargées de combler — rien d'alarmant à ce stade.`;
   return `Si le plan continue d'être tenu comme il l'a été jusqu'ici, <b>${META.objectif.plan}</b> est un objectif crédible — la régularité déjà démontrée est le meilleur signal disponible.`;
 }
@@ -441,8 +485,13 @@ function confidenceTxt(){
 function nextFocusTxt(wCur){
   const last=HEBDO[HEBDO.length-1];
   if(last.tsb!=null && last.tsb<-18) return `Priorité à la récup cette semaine — la forme est dans le rouge, ce n'est pas le moment d'ajouter de la fatigue évitable.`;
-  const idx=wCur.s.findIndex((s,i)=>!isDone(wCur,s,i));
-  if(idx===-1) return `Semaine bouclée côté séances — profite du repos avant la suite, il compte tout autant que l'effort.`;
+  const today=toISO(NOW);
+  const idx=wCur.s.findIndex((s,i)=>{ if(isDone(wCur,s,i)) return false; const d=sessionDate(wCur,i); return !d||toISO(d)>=today; });
+  if(idx===-1){
+    const wN=SEMAINES.find(x=>x.n===curWeek+1);
+    return wN?`Semaine terminée. Prochaine étape : <b>${wN.titre.toLowerCase()}</b>, qui commence par « ${wN.s[(wN.planning?.find(p=>p.i&&p.i.length)?.i||[0])[0]].t} ».`
+      :`Semaine bouclée côté séances — profite du repos avant la suite, il compte tout autant que l'effort.`;
+  }
   const a=wCur.s[idx].a;
   if(a==="sl"||a==="sl_am") return `Focus sur la sortie longue à venir : arrive frais, c'est elle qui construit le plus.`;
   if(["vma_court","vma_long","vo2max","seuil","seuil_2000","interval_1000"].includes(a)) return `Focus sur la fraîcheur avant la séance de qualité qui arrive — le bénéfice dépend de la vitesse réellement tenue, pas de la fatigue accumulée avant.`;
@@ -655,6 +704,10 @@ function detectCelebration(){
       label:"🏅 Nouveau record d'allure sur sortie longue !",
       detail:`${last.sl_allure} /km sur ${last.longest} km — plus rapide qu'aucune sortie longue de distance comparable jusqu'ici.`});
   }
+  const semi=lastSemi();
+  if(semi && semi.date>=last.lundi) candidates.push({type:"semi",priority:0,
+    label:`🏅 Semi bouclé en ${semi.temps} !`,
+    detail:`${semiVerdict(semi).allure}/km de moyenne. ${{plan:`Le chrono valide l'objectif ${META.objectif.plan}.`,course:`Le chrono confirme l'objectif de course ${META.objectif.course}.`,revoir:`L'objectif de course est à ajuster.`}[semiVerdict(semi).verdict]}`});
   const streak=pilierStreak();
   if([2,4,8,12].includes(streak)) candidates.push({type:`streak${streak}`,priority:5,
     label:`🔥 ${streak} semaines d'affilée !`,
@@ -806,13 +859,13 @@ function kpiDefs(){
   return [
     {key:"km",l:"Volume hebdo",v:H[H.length-1].km,u:"km cette semaine",b:bars("km"),c:"#22c3e6",
      t:tVol,n:progressCaption(tVol,
-       t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — tu montes bien vers le pic de ~65 km en semaine 10.`,
-       "Le plan te fait monter jusqu'à ~65 km en semaine 10. En clair pointillé : semaines à venir, valeur prévue par le plan.")},
+       t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — tu montes bien vers le pic de ~${peak().vol} km en semaine ${peak().volWeek}.`,
+       `Le plan te fait monter jusqu'à ~${peak().vol} km en semaine ${peak().volWeek}. En clair pointillé : semaines à venir, valeur prévue par le plan.`)},
     {key:"longest",l:"Sortie longue max",v:Math.max(...H.map(x=>x.longest)),u:"km (record du bloc)",b:bars("longest"),c:"#ffb703",
      t:trend(TB.map(x=>x.longest)),
      n: slGain>0.5
-       ? `+${slGain.toFixed(1)} km depuis le début du suivi — encore ${Math.max(0,30-slNow).toFixed(0)} km avant le pic de la semaine 10.`
-       : "Objectif : 30 km en semaine 10. C'est ton principal levier. En clair pointillé : semaines à venir, valeur prévue par le plan."},
+       ? `+${slGain.toFixed(1)} km depuis le début du suivi — encore ${Math.max(0,peak().sl-slNow).toFixed(0)} km avant le pic de la semaine ${peak().slWeek}.`
+       : `Objectif : ${peak().sl} km en semaine ${peak().slWeek}. C'est ton principal levier. En clair pointillé : semaines à venir, valeur prévue par le plan.`},
     {key:"eff",l:"Efficience",v:H.filter(x=>x.eff).slice(-1)[0]?.eff,u:"m par battement",b:bars("eff"),c:"#2dd4bf",
      t:tEff,n:progressCaption(tEff,
        t=>`En hausse de ${t.pct.toFixed(0)} % sur 3 semaines — ton cœur travaille moins pour la même allure, exactement l'effet recherché.`,
@@ -1012,8 +1065,8 @@ function indicatorAnalysis(key){
   }
   if(key==="km"){
     const volPrevu=Math.round(S.km_prevu);
-    return {cls:"co-i",title:"Vers le pic de la semaine 10",
-      txt:`Le plan monte le volume jusqu'à un pic d'environ 65 km en semaine 10, pour un total de <b>${volPrevu} km</b> sur les 12 semaines. Ce n'est pas un indicateur à faire progresser semaine après semaine comme l'efficience — il suit simplement la charge planifiée, la vraie question est de le réaliser tel quel, pas de le pousser plus haut.`};
+    return {cls:"co-i",title:`Vers le pic de la semaine ${peak().volWeek}`,
+      txt:`Le plan monte le volume jusqu'à un pic d'environ ${peak().vol} km en semaine ${peak().volWeek}, pour un total de <b>${volPrevu} km</b> sur les 12 semaines. Ce n'est pas un indicateur à faire progresser semaine après semaine comme l'efficience — il suit simplement la charge planifiée, la vraie question est de le réaliser tel quel, pas de le pousser plus haut.`};
   }
   if(key==="anaero_min"){
     const H=HEBDO, last=H[H.length-1];
@@ -1110,12 +1163,12 @@ function renderProjection(){
       <div class="kn">${gapMin>0?`Écart de <b>${gapMin} min</b> avec l'objectif — c'est précisément ce que le plan cible.`:`Déjà sous l'objectif — le plan sert maintenant à consolider cette marge.`}</div></div>
     <div class="kpi"><div class="kl">Potentiel physiologique</div>
       <div class="kv" style="color:var(--vert)">${secToHM(eng.primary.sec)}</div>
-      <div class="ku">extrapolé depuis ton semi</div>
+      <div class="ku">extrapolé depuis ton semi ${lastSemi()?`réel (${lastSemi().temps})`:"prédit"}</div>
       <div class="kn">5 km → ${secToHM(eng.estimates[0].sec)} · 10 km → ${secToHM(eng.estimates[1].sec)}. Écart entre les 3 méthodes : ${eng.spreadMin} min — le semi est retenu car c'est la distance la plus proche du marathon, donc l'extrapolation la plus fiable.</div></div>
   </div>
   <div class="g g2">
     ${[
-      ["Sortie longue max",`${longestRecord} km`,"30 km","Le facteur n°1. Passer à 30 km transforme ta capacité à tenir le km 35."],
+      ["Sortie longue max",`${longestRecord} km`,`${peak().sl} km`,`Le facteur n°1. Passer à ${peak().sl} km transforme ta capacité à tenir le km 35.`],
       ["Volume total du bloc",`${Math.round(S.km_fait)} km`,`${volPrevu} km`,"Densification capillaire et mitochondriale, meilleure utilisation des graisses."],
       ["Sorties à allure marathon",`${amDone}/${amAll.length}`,`${amAll.length} au total`,"L'allure cible devient un automatisme au lieu d'un effort."],
       ["Séances au seuil",`${seuilDone}/${seuilAll.length}`,`${seuilAll.length} au total`,"Relève le plafond aérobie sous lequel se situe ton allure de course."]
@@ -1293,12 +1346,17 @@ function renderAnalyse(){
   g("analyse").innerHTML=`
 <div class="co co-g"><b class="t">Ton profil</b>
   VO2max <b>${GARMIN.vo2max} ml/kg/min</b>${vo2Txt} — FC de repos la plus récente : <b>${fcLatest??"—"} bpm</b>
-  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm depuis la reprise du port continu le ${PORT_CONTINU_DEBUT_TXT} — la référence sera recalculée une fois assez de données accumulées, autour de la mi-octobre)</span>`:""}.
+  ${fcMin!=null?`<span style="color:var(--tx3)">(entre ${fcMin} et ${fcMax} bpm depuis la reprise du port continu le ${PORT_CONTINU_DEBUT_TXT} — ${GARMIN.fc_repos_ref?`référence recalculée le ${new Date(GARMIN.fc_repos_ref.date+"T00:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"})} sur ${GARMIN.fc_repos_ref.jours} jours : <b>${GARMIN.fc_repos} bpm</b>`:"la référence sera recalculée une fois assez de données accumulées"})</span>`:""}.
   <br><br>${lastRunTxt} Ta plus longue sortie à ce jour fait <b>${longestRecord} km</b>, soit <b>${pctMarathon} %</b> de la distance du marathon.
-  <br><br>Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
+  <br><br>${lastSemi()?(()=>{const v=semiVerdict(lastSemi());return `Ton semi réel (<b>${lastSemi().temps}</b>, le ${v.dateTxt}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b>
+  par pur calcul physiologique (formule de Riegel, le marathon « parfait », sans perte d'efficacité en fin de course). En pratique,
+  il vaut plutôt <b>${secToHM(v.eq)}</b> avec un ratio réaliste (×${RATIO_PLAN.toFixed(2).replace(".",",")}), et ${secToHM(v.histo)} si ton historique se répète
+  (×${RATIO_HISTO.toFixed(2).replace(".",",")}, celui de tes marathons précédents). L'écart entre ces chiffres, c'est ton endurance spécifique :
+  exactement ce que le plan travaille, avec les sorties longues et le renfo des fessiers et des ischios.`;})()
+  :`Ton semi prédit (${GARMIN.predictions.semi}) vaudrait un marathon en <b>${secToHM(potentielSec)}</b> par pur calcul physiologique
   (formule de Riegel, extrapolée depuis le semi — la distance la plus proche du marathon, donc la plus fiable) — Garmin prédit
   en réalité <b>${secToHM(predSec)}</b>. L'écart, <b>${gapMin} minutes</b>, chiffre ton déficit d'endurance spécifique : c'est
-  exactement ce que le plan comble, semaine après semaine.</div>
+  exactement ce que le plan comble, semaine après semaine.`}</div>
 <div class="g g2">
   <div class="card"><h3>🔋 Le carburant</h3>
     <p class="lead" style="margin:8px 0 0">Tu stockes environ <b>2 000 kcal</b> de glycogène, un marathon en coûte ~2 800.
@@ -1409,13 +1467,13 @@ function chargeSignals(){
 function sortieLongueAnalysis(){
   const H=HEBDO;
   const longestRecord=Math.max(...H.map(w=>w.longest));
-  const slDone=longestRecord>=30, slOk=longestRecord>=20, slStarting=longestRecord<15;
+  const slDone=longestRecord>=peak().sl, slOk=longestRecord>=20, slStarting=longestRecord<15;
   const cs=cardioSignals();
   const nextSL=nextSession(s=>s.a==="sl"||s.a==="sl_am");
   const slAllureTxt=cs.tSlAllure?` Et ton allure sur ces sorties évolue de <b>${cs.tSlAllure.pct>0?"+":""}${cs.tSlAllure.pct.toFixed(0)} %</b> sur 3 semaines${cs.tSlAllure.good?" — l'endurance spécifique suit.":" — à surveiller si ça ne suit pas la distance."}`:"";
   const cls=slDone?'co-v':slOk?'co-i':'co-w';
   const title=`Sortie longue — record actuel ${longestRecord} km`;
-  const txt=`Objectif final : 42,2 km le jour J, pic d'entraînement à 30 km en semaine 10.${slAllureTxt}
+  const txt=`Objectif final : 42,2 km le jour J, pic d'entraînement à ${peak().sl} km en semaine ${peak().slWeek}.${slAllureTxt}
     <br><b>Statut :</b> ${slDone?"pic atteint : protège-le, n'en rajoute pas — la suite, c'est l'affûtage.":slOk?"bonne trajectoire, continue sans brûler d'étape.":slStarting?"tout démarre juste, c'est normal à ce stade du bloc.":"c'est le facteur n°1 du plan, ne saute aucune sortie longue d'ici la semaine 10."}
     ${nextSL?`<br><b>Prochain rendez-vous :</b> ${nextSL.date?jourLong(toISO(nextSL.date)):`semaine ${nextSL.w.n}`} — ${esc(nextSL.s.t)}${nextSL.s.km?` (${nextSL.s.km} km)`:""}.`:""}`;
   return {cls,title,txt,longestRecord};
