@@ -33,7 +33,9 @@ from datetime import datetime, timedelta, timezone
 
 APP_FILE = os.path.expanduser("~/.secrets/withings-app.json")
 TOKENS_FILE = os.path.expanduser("~/.secrets/withings-tokens.json")
-TOKEN_URL = "https://account.withings.com/oauth2/token"
+# Ancienne adresse account.withings.com/oauth2/token fermée par Withings : échange et
+# renouvellement passent par l'action "requesttoken", réponse emballée dans {"status", "body"}.
+TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2"
 MEASURE_URL = "https://wbsapi.withings.net/measure"
 TAILLE_M = 1.85  # cf. META.athlete.taille dans data-plan.js — change si Romain grandit encore
 
@@ -57,6 +59,7 @@ def _save_json_secret(path, data):
 
 def refresh_access_token(app, tokens):
     data = urllib.parse.urlencode({
+        "action": "requesttoken",
         "grant_type": "refresh_token",
         "client_id": app["client_id"],
         "client_secret": app["client_secret"],
@@ -65,6 +68,8 @@ def refresh_access_token(app, tokens):
     req = urllib.request.Request(TOKEN_URL, data=data, method="POST")
     with urllib.request.urlopen(req) as resp:
         new_tokens = json.loads(resp.read().decode("utf-8"))
+    if new_tokens.get("status") == 0 and isinstance(new_tokens.get("body"), dict):
+        new_tokens = new_tokens["body"]
     if "access_token" not in new_tokens:
         print(f"❌ Échec du renouvellement du token : {new_tokens}", file=sys.stderr)
         print("   Il faudra probablement relancer withings-setup.py.", file=sys.stderr)

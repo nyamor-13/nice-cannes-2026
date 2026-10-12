@@ -39,7 +39,9 @@ TOKENS_FILE = os.path.expanduser("~/.secrets/withings-tokens.json")
 # ensuite dans le terminal.
 REDIRECT_URI = "https://nyamor-13.github.io/nice-cannes-2026/withings-callback.html"
 AUTHORIZE_URL = "https://account.withings.com/oauth2_user/authorize2"
-TOKEN_URL = "https://account.withings.com/oauth2/token"
+# Ancienne adresse account.withings.com/oauth2/token fermée par Withings : échange et
+# renouvellement passent par l'action "requesttoken", réponse emballée dans {"status", "body"}.
+TOKEN_URL = "https://wbsapi.withings.net/v2/oauth2"
 
 
 def _save_json_secret(path, data):
@@ -146,6 +148,7 @@ navigateur :
     result = {"code": code}
 
     data = urllib.parse.urlencode({
+        "action": "requesttoken",
         "grant_type": "authorization_code",
         "client_id": app["client_id"],
         "client_secret": app["client_secret"],
@@ -155,6 +158,8 @@ navigateur :
     req = urllib.request.Request(TOKEN_URL, data=data, method="POST")
     with urllib.request.urlopen(req) as resp:
         tokens = json.loads(resp.read().decode("utf-8"))
+    if tokens.get("status") == 0 and isinstance(tokens.get("body"), dict):
+        tokens = tokens["body"]
 
     if "access_token" not in tokens or "refresh_token" not in tokens:
         print(f"\n❌ Réponse Withings inattendue : {tokens}")
