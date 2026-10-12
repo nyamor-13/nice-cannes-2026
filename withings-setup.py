@@ -22,22 +22,22 @@ le repo GitHub officiel withings-sas/api-oauth2-python) :
   - Échange/refresh de token : POST https://account.withings.com/oauth2/token
   - Scope nécessaire : user.metrics (poids + composition corporelle)
 """
-import http.server
 import json
 import os
 import secrets
-import socketserver
 import stat
 import sys
-import threading
 import urllib.parse
 import urllib.request
 import webbrowser
 
 APP_FILE = os.path.expanduser("~/.secrets/withings-app.json")
 TOKENS_FILE = os.path.expanduser("~/.secrets/withings-tokens.json")
-REDIRECT_PORT = 8734
-REDIRECT_URI = f"http://localhost:{REDIRECT_PORT}/callback"
+# Withings vérifie que l'URL de retour est joignable depuis Internet : localhost est refusé
+# ("Our servers couldn't reach this URL"). On utilise donc une page publique du site, qui se
+# contente d'afficher le code d'autorisation (rien n'est envoyé nulle part) ; Romain le colle
+# ensuite dans le terminal.
+REDIRECT_URI = "https://nyamor-13.github.io/nice-cannes-2026/withings-callback.html"
 AUTHORIZE_URL = "https://account.withings.com/oauth2_user/authorize2"
 TOKEN_URL = "https://account.withings.com/oauth2/token"
 
@@ -59,7 +59,9 @@ def _input(prompt):
 def ensure_app_credentials():
     if os.path.isfile(APP_FILE):
         with open(APP_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            app = json.load(f)
+        app["redirect_uri"] = REDIRECT_URI
+        return app
 
     print("=" * 70)
     print("ÉTAPE 1/2 — Créer l'application sur le portail développeur Withings")
@@ -108,35 +110,6 @@ def run_oauth_flow(app):
     print("=" * 70)
 
     state = secrets.token_urlsafe(16)
-    result = {}
-
-    class Handler(http.server.BaseHTTPRequestHandler):
-        def do_GET(self):
-            qs = urllib.parse.urlparse(self.path).query
-            params = urllib.parse.parse_qs(qs)
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            if params.get("state", [None])[0] != state:
-                self.wfile.write(b"<h2>Code de securite invalide, recommence.</h2>")
-                result["error"] = "state mismatch"
-            elif "code" in params:
-                result["code"] = params["code"][0]
-                self.wfile.write(
-                    "<h2>Autorisation recue, tu peux fermer cet onglet.</h2>"
-                    "<p>Retourne au terminal.</p>".encode("utf-8")
-                )
-            else:
-                result["error"] = params.get("error", ["inconnue"])[0]
-                self.wfile.write(b"<h2>Autorisation refusee ou annulee.</h2>")
-
-        def log_message(self, fmt, *args):
-            pass
-
-    httpd = socketserver.TCPServer(("127.0.0.1", REDIRECT_PORT), Handler)
-    thread = threading.Thread(target=httpd.handle_request, daemon=True)
-    thread.start()
-
     payload = {
         "response_type": "code",
         "client_id": app["client_id"],
@@ -148,8 +121,8 @@ def run_oauth_flow(app):
     print(f"""
 Un onglet va s'ouvrir sur la page de connexion Withings. Connecte-toi avec ton
 compte Withings habituel (celui de ta balance) et clique sur "Autoriser" (ou
-"Allow"). Tu seras ensuite redirigé vers une page locale qui confirme que c'est
-bon — c'est normal et attendu, rien à en faire d'autre.
+"Allow"). Tu arriveras ensuite sur une page "Autorisation reçue" qui affiche un
+code : copie-le (bouton "Copier le code") et colle-le ici.
 
 Si l'onglet ne s'ouvre pas tout seul, copie-colle cette adresse dans ton
 navigateur :
@@ -160,13 +133,17 @@ navigateur :
     except Exception:
         pass
 
-    print("En attente de ton autorisation dans le navigateur (2 minutes max)...")
-    thread.join(timeout=120)
-    httpd.server_close()
-
-    if "code" not in result:
-        print(f"\n❌ Autorisation non reçue ({result.get('error', 'délai dépassé')}). Relance le script.")
+    code = _input("Colle ici le code affiché (ou l'adresse complète de la page) : ")
+    if code.startswith("http"):
+        params = urllib.parse.parse_qs(urllib.parse.urlparse(code).query)
+        if params.get("state", [state])[0] != state:
+            print("\n❌ Code de sécurité invalide (state). Relance le script.")
+            sys.exit(1)
+        code = params.get("code", [""])[0]
+    if not code:
+        print("\n❌ Aucun code reçu. Relance le script.")
         sys.exit(1)
+    result = {"code": code}
 
     data = urllib.parse.urlencode({
         "grant_type": "authorization_code",
