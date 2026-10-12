@@ -1186,7 +1186,7 @@ function renderProjection(){
 }
 
 /* ============================================================
-   RENDU — WITHINGS (poids & composition, relevé manuel)
+   RENDU — WITHINGS (poids & composition, API Withings à chaque synchro)
    ============================================================ */
 function trendPill(v,goodDir,unit){
   if(v==null) return "";
@@ -1197,6 +1197,21 @@ function trendPill(v,goodDir,unit){
   }
   const arrow=v>0?"▲":(v<0?"▼":"—");
   return `<span class="trend ${cls}">${arrow} ${Math.abs(v).toFixed(1)}${unit||""}</span>`;
+}
+// Lecture de la composition, entièrement dérivée des tendances de la période (jamais figée).
+function withingsTxt(w){
+  const dir=(v,seuil,up,down,eq)=>v==null?null:(v>=seuil?up:v<=-seuil?down:eq);
+  const pv=w.poids_tendance_kg, pTxt=pv==null?"":` (${pv>0?"+":""}${pv} kg)`;
+  const poids=w.poids_statut?`poids ${w.poids_statut.toLowerCase()}${pTxt}`:dir(pv,0.5,`poids en hausse${pTxt}`,`poids en baisse${pTxt}`,`poids stable${pTxt}`);
+  const muscle=dir(w.muscle_tendance_pct,0.1,"muscle en hausse","muscle en baisse","muscle stable");
+  const gras=dir(w.graisse_tendance_pct,0.1,"gras en hausse","gras en baisse","gras stable");
+  const parts=[poids,muscle,gras].filter(Boolean);
+  const bon=(w.muscle_tendance_pct??0)>=-0.1 && (w.graisse_tendance_pct??0)<=0.1;
+  const phrase=parts.length?parts.join(", ").replace(/^./,c=>c.toUpperCase())+` sur les ${w.periode}.`:"";
+  const lecture=bon
+    ?(w.poids_tendance_kg!=null&&w.poids_tendance_kg>=0.5?" La légère hausse ne vient pas du gras : en plein bloc, elle tient le plus souvent aux réserves de glycogène et à l'eau qu'elles retiennent. Rien à ajuster.":" La composition évolue dans le bon sens pendant la montée en charge. Rien à ajuster.")
+    :" À surveiller : la composition ne va pas dans le sens recherché pendant le bloc.";
+  return phrase+lecture;
 }
 function renderWithings(){
   const w=window.WITHINGS;
@@ -1234,11 +1249,10 @@ function renderWithings(){
       <div class="kn">Muscles + os + eau + organes.</div></div>
     <div class="kpi"><div class="kl">Masse osseuse</div>
       <div class="kv" style="color:var(--tx)">${w.masse_osseuse_statut}</div>
-      <div class="kn">Stable sur la période.</div></div>
+      <div class="kn">Statut Withings sur la période.</div></div>
   </div>
   <div class="co co-v" style="margin-top:12px"><b class="t">Ce que ça dit pour le bloc</b>
-    Poids stable, muscle en légère hausse, gras en légère baisse : la composition évolue dans le bon sens pendant
-    la montée en charge. Rien à ajuster dans le plan pour l'instant — demande-moi un nouveau relevé quand tu veux un point.
+    ${withingsTxt(w)}
   </div>`;
 }
 function renderMateriel(){
