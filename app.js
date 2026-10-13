@@ -486,7 +486,12 @@ function nextFocusTxt(wCur){
   const last=HEBDO[HEBDO.length-1];
   if(last.tsb!=null && last.tsb<-18) return `Priorité à la récup cette semaine — la forme est dans le rouge, ce n'est pas le moment d'ajouter de la fatigue évitable.`;
   const today=toISO(NOW);
-  const idx=wCur.s.findIndex((s,i)=>{ if(isDone(wCur,s,i)) return false; const d=sessionDate(wCur,i); return !d||toISO(d)>=today; });
+  // Prochaine séance non cochée dans l'ordre du calendrier (pas l'ordre du tableau w.s, qui ne
+  // suit pas forcément les jours quand la semaine a été réagencée).
+  const cand=wCur.s.map((s,i)=>({i,d:sessionDate(wCur,i)}))
+    .filter(x=>!isDone(wCur,wCur.s[x.i],x.i)&&(!x.d||toISO(x.d)>=today))
+    .sort((x,y)=>(x.d?x.d.getTime():Infinity)-(y.d?y.d.getTime():Infinity));
+  const idx=cand.length?cand[0].i:-1;
   if(idx===-1){
     const wN=SEMAINES.find(x=>x.n===curWeek+1);
     return wN?`Semaine terminée. Prochaine étape : <b>${wN.titre.toLowerCase()}</b>, qui commence par « ${wN.s[(wN.planning?.find(p=>p.i&&p.i.length)?.i||[0])[0]].t} ».`
@@ -496,7 +501,7 @@ function nextFocusTxt(wCur){
   if(a==="sl"||a==="sl_am") return `Focus sur la sortie longue à venir : arrive frais, c'est elle qui construit le plus.`;
   if(["vma_court","vma_long","vo2max","seuil","seuil_2000","interval_1000"].includes(a)) return `Focus sur la fraîcheur avant la séance de qualité qui arrive — le bénéfice dépend de la vitesse réellement tenue, pas de la fatigue accumulée avant.`;
   if(a==="cotes") return `Focus sur les côtes à venir : ménage un peu mollets et tendons d'Achille dans les jours autour.`;
-  if(a==="renfo_a"||a==="renfo_b") return `Focus sur le renfo prévu — c'est le complément qui manque le plus à la préparation en ce moment, ne le saute pas.`;
+  if(a==="renfo_a"||a==="renfo_b"||a==="renfo_v") return `Focus sur le renfo prévu — c'est le complément qui manque le plus à la préparation en ce moment, ne le saute pas.`;
   if(a==="repos"||a==="off") return `Focus sur le repos prévu — vraiment rien à faire, c'est pendant ces jours-là que le corps encaisse.`;
   return `Garde le cap — rien de particulier à ajuster aujourd'hui.`;
 }
