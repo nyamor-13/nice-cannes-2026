@@ -1211,7 +1211,12 @@ function withingsTxt(w){
   const muscle=dir(w.muscle_tendance_pct,0.1,"muscle en hausse","muscle en baisse","muscle stable");
   const gras=dir(w.graisse_tendance_pct,0.1,"gras en hausse","gras en baisse","gras stable");
   const parts=[poids,muscle,gras].filter(Boolean);
-  const bon=(w.muscle_tendance_pct??0)>=-0.1 && (w.graisse_tendance_pct??0)<=0.1;
+  // Sans tendance de composition sur la période (trop peu de mesures), on ne conclut rien sur le gras.
+  if(w.muscle_tendance_pct==null||w.graisse_tendance_pct==null){
+    return (parts.length?parts.join(", ").replace(/^./,c=>c.toUpperCase())+` sur les ${w.periode}.`:"")+
+      " Pas assez de pesées récentes pour lire l'évolution du muscle et du gras : quelques pesées de plus suffiront.";
+  }
+  const bon=w.muscle_tendance_pct>=-0.1 && w.graisse_tendance_pct<=0.1;
   const phrase=parts.length?parts.join(", ").replace(/^./,c=>c.toUpperCase())+` sur les ${w.periode}.`:"";
   const lecture=bon
     ?(w.poids_tendance_kg!=null&&w.poids_tendance_kg>=0.5?" La légère hausse ne vient pas du gras : en plein bloc, elle tient le plus souvent aux réserves de glycogène et à l'eau qu'elles retiennent. Rien à ajuster.":" La composition évolue dans le bon sens pendant la montée en charge. Rien à ajuster.")
