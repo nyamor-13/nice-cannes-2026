@@ -499,7 +499,7 @@ function nextFocusTxt(wCur){
   }
   const a=wCur.s[idx].a;
   if(a==="sl"||a==="sl_am") return `Focus sur la sortie longue à venir : arrive frais, c'est elle qui construit le plus.`;
-  if(["vma_court","vma_long","vo2max","seuil","seuil_2000","interval_1000"].includes(a)) return `Focus sur la fraîcheur avant la séance de qualité qui arrive — le bénéfice dépend de la vitesse réellement tenue, pas de la fatigue accumulée avant.`;
+  if(["vma_court","vma_long","vo2max","seuil","seuil_2000","interval_1000","test_gavela"].includes(a)) return `Focus sur la fraîcheur avant la séance de qualité qui arrive — le bénéfice dépend de la vitesse réellement tenue, pas de la fatigue accumulée avant.`;
   if(a==="cotes") return `Focus sur les côtes à venir : ménage un peu mollets et tendons d'Achille dans les jours autour.`;
   if(a==="renfo_a"||a==="renfo_b"||a==="renfo_v") return `Focus sur le renfo prévu — c'est le complément qui manque le plus à la préparation en ce moment, ne le saute pas.`;
   if(a==="repos"||a==="off") return `Focus sur le repos prévu — vraiment rien à faire, c'est pendant ces jours-là que le corps encaisse.`;
