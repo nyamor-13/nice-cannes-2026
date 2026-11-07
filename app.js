@@ -1211,6 +1211,11 @@ function withingsTxt(w){
   const muscle=dir(w.muscle_tendance_pct,0.1,"muscle en hausse","muscle en baisse","muscle stable");
   const gras=dir(w.graisse_tendance_pct,0.1,"gras en hausse","gras en baisse","gras stable");
   const parts=[poids,muscle,gras].filter(Boolean);
+  // Semaine de charge en glucides : l'eau et le glycogène faussent l'impédancemétrie, on ne conclut rien.
+  if(curWeek>=12){
+    return (poids?poids.replace(/^./,c=>c.toUpperCase())+` sur les ${w.periode}. `:"")+
+      "Cette semaine, la charge en glucides et l'eau qu'elle retient faussent la mesure du muscle et du gras : ne t'y fie pas. Rien à ajuster.";
+  }
   // Sans tendance de composition sur la période (trop peu de mesures), on ne conclut rien sur le gras.
   if(w.muscle_tendance_pct==null||w.graisse_tendance_pct==null){
     return (parts.length?parts.join(", ").replace(/^./,c=>c.toUpperCase())+` sur les ${w.periode}.`:"")+
