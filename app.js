@@ -245,6 +245,21 @@ function semiVerdict(c){
   const verdict=eq<=plan?"plan":eq<=course+300?"course":"revoir";
   return {sec,eq,histo,allure,dateTxt,verdict};
 }
+// Marathon couru pendant le bloc (le jour J), et meilleur marathon antérieur pour situer le chrono.
+function lastMarathon(){
+  const C=(window.COURSES||[]).filter(c=>c.type==="marathon"&&c.date>=SEMAINES[0].du);
+  return C.length?C[C.length-1]:null;
+}
+function previousBestMarathon(m){
+  const C=(window.COURSES||[]).filter(c=>c.type==="marathon"&&c.date<m.date);
+  return C.length?C.reduce((a,b)=>timeToSec(a.temps)<=timeToSec(b.temps)?a:b):null;
+}
+function marathonTxt(m){
+  const prev=previousBestMarathon(m), sec=timeToSec(m.temps);
+  const pr=prev&&sec<timeToSec(prev.temps);
+  const gain=prev?Math.round((timeToSec(prev.temps)-sec)/60):0;
+  return `Marathon bouclé en <b>${m.temps}</b>`+(pr?`, nouveau record personnel (${gain} min de mieux que ${prev.nom}, ${prev.temps})`:"")+".";
+}
 function secToMS(s){ s=Math.round(s); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
 function enginePotentiel(){
   const G=GARMIN.predictions, semi=lastSemi();
@@ -341,11 +356,14 @@ function renderHeroRow(){
   const el=g("heroRow"); if(!el) return;
   const streak=pilierStreak();
   const tiles=[
-    lastSemi()?{k:"Objectif course",v:META.objectif.course,cls:""}:{k:"Objectif",v:META.objectif.plan,cls:""},
+    lastMarathon()?{k:"Marathon",v:secToHM(timeToSec(lastMarathon().temps)),cls:""}
+      :lastSemi()?{k:"Objectif course",v:META.objectif.course,cls:""}:{k:"Objectif",v:META.objectif.plan,cls:""},
   ];
   if(streak>=2) tiles.push({k:"Régularité",v:`🔥 ${streak} sem.`,cls:"streak"});
   const pred=GARMIN?.predictions?.marathon;
-  if(pred){
+  if(lastMarathon()&&window.TOTAUX){
+    tiles.push({k:"Bloc",v:`${Math.round(TOTAUX.km)} km`,cls:""});
+  }else if(pred){
     // Même arrondi que partout ailleurs (secToHM) : 3:47:33 doit se lire 3h48 ici
     // comme sur "Pourquoi ce plan", pas 3h47 par simple troncature des secondes.
     tiles.push({k:"Prédiction",v:secToHM(timeToSec(pred)),cls:""});
@@ -420,6 +438,7 @@ function renderHome(){
 // courte réutilisable dans une narration plutôt que dans une carte dédiée.
 function formeLabel(){
   const last=HEBDO[HEBDO.length-1];
+  if(lastMarathon()) return {txt:"en récupération après le marathon, la fatigue est normale",cls:"var(--azur-l)"};
   if(last.tsb==null) return {txt:"en cours d'installation",cls:"var(--azur-l)"};
   if(last.tsb>5) return {txt:"frais, de la marge sous le capot",cls:"var(--vert)"};
   if(last.tsb>-10) return {txt:"en charge normale, ni trop frais ni cramé",cls:"var(--azur-l)"};
@@ -431,6 +450,8 @@ function formeLabel(){
 // que de ne les découvrir qu'en semaine 7. Le message glisse automatiquement vers le prochain
 // jalon pertinent au fil des semaines.
 function nextChallengeTxt(){
+  const mara=lastMarathon();
+  if(mara) return marathonTxt(mara);
   if(curWeek<=7) return `Le vrai juge de paix arrive en deux temps : le <b>semi en solo</b> mi-octobre dira où en est vraiment le chrono, puis les <b>${peak().sl} km</b> de la semaine ${peak().slWeek} seront la répétition générale du jour J.`;
   const semi=lastSemi();
   if(curWeek<=9 && semi){
@@ -464,6 +485,12 @@ function adherenceSoFar(){
   return tot?fait/tot:1;
 }
 function confidenceTxt(){
+  {const mara=lastMarathon(), semiR=lastSemi();
+   if(mara){
+     const ratio=semiR?(timeToSec(mara.temps)/timeToSec(semiR.temps)).toFixed(2).replace(".",","):null;
+     return ratio?`Ton marathon vaut ×${ratio} ton semi d'octobre, le même rapport que tes marathons précédents (×2,30) : la vitesse est là, c'est l'endurance de fin de course qui fera la différence la prochaine fois.`
+       :`Le bloc est terminé : place à la récupération avant de penser à la suite.`;
+   }}
   const adherence=adherenceSoFar();
   const last=HEBDO[HEBDO.length-1];
   const weeksLeft=Math.max(0,12-curWeek);
@@ -484,6 +511,7 @@ function confidenceTxt(){
 // prévu, la priorité devient la récup.
 function nextFocusTxt(wCur){
   const last=HEBDO[HEBDO.length-1];
+  if(lastMarathon()) return `Récupération : une à deux semaines sans séance dure. Marche, vélo souple ou natation les premiers jours, puis quelques footings courts quand les jambes le demandent.`;
   if(last.tsb!=null && last.tsb<-18) return `Priorité à la récup cette semaine — la forme est dans le rouge, ce n'est pas le moment d'ajouter de la fatigue évitable.`;
   const today=toISO(NOW);
   // Prochaine séance non cochée dans l'ordre du calendrier (pas l'ordre du tableau w.s, qui ne
@@ -517,7 +545,7 @@ function renderHomeSynthese(wCur){
 
   el.innerHTML=`
   <div class="co co-i" style="border-color:${forme.cls}">
-    <b class="t" style="color:${forme.cls}">Semaine ${wCur.n}/12 · ${daysToRace} jours avant le marathon</b>
+    <b class="t" style="color:${forme.cls}">${lastMarathon()?`Marathon Nice-Cannes · ${lastMarathon().temps}`:`Semaine ${wCur.n}/12 · ${daysToRace} jours avant le marathon`}</b>
     Forme actuelle : <b style="color:${forme.cls}">${forme.txt}</b>. ${nextChallengeTxt()}
     <br><br>
     ${confidenceTxt()}
@@ -709,6 +737,10 @@ function detectCelebration(){
       label:"🏅 Nouveau record d'allure sur sortie longue !",
       detail:`${last.sl_allure} /km sur ${last.longest} km — plus rapide qu'aucune sortie longue de distance comparable jusqu'ici.`});
   }
+  const mara=lastMarathon();
+  if(mara) candidates.push({type:`marathon-${mara.date}`,priority:-1,
+    label:`🏅 Marathon bouclé en ${mara.temps} !`,
+    detail:(()=>{const p=previousBestMarathon(mara);return p&&timeToSec(mara.temps)<timeToSec(p.temps)?`Nouveau record personnel, ${Math.round((timeToSec(p.temps)-timeToSec(mara.temps))/60)} min de mieux qu'à ${p.nom}.`:"Le bloc de 12 semaines est bouclé.";})()});
   const semi=lastSemi();
   if(semi && semi.date>=last.lundi) candidates.push({type:"semi",priority:0,
     label:`🏅 Semi bouclé en ${semi.temps} !`,
